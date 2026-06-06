@@ -315,7 +315,7 @@ function FreezeDialog({ member }: { member: Member }) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
                 <Form
-                    action="/membership/status/freeze"
+                    action="/billing/freeze"
                     method="post"
                     className="space-y-4"
                 >
@@ -327,7 +327,7 @@ function FreezeDialog({ member }: { member: Member }) {
                                     {member.last_name}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Temporarily pause this membership.
+                                    Temporarily pause this membership. End date will be extended automatically on reactivation.
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -344,23 +344,20 @@ function FreezeDialog({ member }: { member: Member }) {
                                 <select
                                     id="freeze_reason"
                                     name="freeze_reason"
-                                    className="border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                    className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     required
                                 >
                                     <option value="">
                                         Select reason...
                                     </option>
-                                    <option value="Medical">
-                                        Medical
+                                    <option value="Medical_Injury">
+                                        Medical / Injury
                                     </option>
                                     <option value="Travel">
                                         Travel
                                     </option>
-                                    <option value="Financial">
-                                        Financial
-                                    </option>
-                                    <option value="Injury">
-                                        Injury
+                                    <option value="Personal">
+                                        Personal
                                     </option>
                                 </select>
                                 <InputError
@@ -368,44 +365,21 @@ function FreezeDialog({ member }: { member: Member }) {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="freeze_start_date">
-                                        Start Date
-                                    </Label>
-                                    <Input
-                                        id="freeze_start_date"
-                                        type="date"
-                                        name="freeze_start_date"
-                                        defaultValue={
-                                            new Date()
-                                                .toISOString()
-                                                .split('T')[0]
-                                        }
-                                        required
-                                    />
-                                    <InputError
-                                        message={
-                                            errors.freeze_start_date
-                                        }
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="freeze_end_date">
-                                        End Date
-                                    </Label>
-                                    <Input
-                                        id="freeze_end_date"
-                                        type="date"
-                                        name="freeze_end_date"
-                                        required
-                                    />
-                                    <InputError
-                                        message={
-                                            errors.freeze_end_date
-                                        }
-                                    />
-                                </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="scheduled_unfreeze_date">
+                                    Scheduled Unfreeze Date
+                                </Label>
+                                <Input
+                                    id="scheduled_unfreeze_date"
+                                    type="date"
+                                    name="scheduled_unfreeze_date"
+                                    required
+                                />
+                                <InputError
+                                    message={
+                                        errors.scheduled_unfreeze_date
+                                    }
+                                />
                             </div>
 
                             <DialogFooter>
@@ -424,16 +398,15 @@ function FreezeDialog({ member }: { member: Member }) {
 function UnfreezeForm({ memberId }: { memberId: number }) {
     return (
         <Form
-            action="/membership/status/unfreeze"
+            action={`/billing/freeze/${memberId}/unfreeze`}
             method="post"
         >
-            <input type="hidden" name="member_id" value={memberId} />
             <Button
                 type="submit"
                 variant="outline"
                 size="sm"
             >
-                Reactivate
+                Reactivate (Extend End Date)
             </Button>
         </Form>
     );
@@ -505,7 +478,7 @@ function CancelDialog({ member }: { member: Member }) {
                                     id="cancellation_reason"
                                     name="cancellation_reason"
                                     rows={3}
-                                    className="border-input flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                    className="border-input flex w-full min-w-0 rounded-none border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     placeholder="Tell us why..."
                                     required
                                 />
@@ -579,7 +552,7 @@ function ModifyDialog({
                                 <select
                                     id="status"
                                     name="status"
-                                    className="border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                    className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     defaultValue={member.status}
                                     required
                                 >
@@ -608,7 +581,7 @@ function ModifyDialog({
                                 <select
                                     id="current_plan_id"
                                     name="current_plan_id"
-                                    className="border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                    className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                 >
                                     <option value="">
                                         No plan

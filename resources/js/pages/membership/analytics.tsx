@@ -179,21 +179,21 @@ export default function Analytics() {
                 <Heading title="Analytics" description="Global trends and individual member insights." />
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1 rounded-lg border p-1">
+                    <div className="flex items-center gap-1 rounded-none border p-1">
                         <button onClick={() => handleTabChange('global')}
-                            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${tab === 'global' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            className={`rounded-none px-4 py-2 text-sm font-medium transition-colors ${tab === 'global' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                             GLOBAL OVERVIEW
                         </button>
                         <button onClick={() => handleTabChange('single')}
-                            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${tab === 'single' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            className={`rounded-none px-4 py-2 text-sm font-medium transition-colors ${tab === 'single' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                             SINGLE MEMBER
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-1 rounded-lg border p-1">
+                    <div className="flex items-center gap-1 rounded-none border p-1">
                         {PERIODS.map((p) => (
                             <button key={p.value} onClick={() => handlePeriodChange(p.value)}
-                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${String(period) === p.value ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                                className={`rounded-none px-3 py-1.5 text-xs font-medium transition-colors ${String(period) === p.value ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                                 {p.label}
                             </button>
                         ))}
@@ -209,7 +209,7 @@ export default function Analytics() {
                     </div>
 
                     {showResults && searchResults.length > 0 && (
-                        <div className="bg-popover text-popover-foreground absolute z-50 mt-1 w-full rounded-md border shadow-md">
+                        <div className="bg-popover text-popover-foreground absolute z-50 mt-1 w-full rounded-none border shadow-md">
                             {searchResults.map((m) => (
                                 <button key={m.id} onClick={() => handleMemberSelect(m)}
                                     className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-accent">
@@ -226,7 +226,7 @@ export default function Analytics() {
                     )}
 
                     {selectedMember && (
-                        <div className="mt-3 flex items-center gap-3 rounded-lg border bg-muted/50 px-3 py-2">
+                        <div className="mt-3 flex items-center gap-3 rounded-none border bg-muted/50 px-3 py-2">
                             <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
                                 {selectedMember.first_name[0]}{selectedMember.last_name[0]}
                             </div>
@@ -535,7 +535,7 @@ function MemberAnalytics({ data }: { data: MemberData | null }) {
                                 }`}>{data.kpi.churn_risk}</p>
                                 <p className="mt-0.5 text-[11px] text-muted-foreground">Score: {data.kpi.churn_score}</p>
                             </div>
-                            <div className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                            <div className={`rounded-none px-3 py-1.5 text-xs font-semibold ${
                                 data.kpi.churn_risk === 'Low' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' :
                                 data.kpi.churn_risk === 'Medium' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' :
                                 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400'
@@ -679,7 +679,7 @@ function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
                             const val = entry?.average_check_ins ?? 0;
                             const intensity = maxVal > 0 ? Math.min(val / maxVal, 1) : 0;
                             return <div key={`${day}-${hour}`} className="flex-1" title={`${day} ${hour}: ${val}`}>
-                                <div className="mx-[1px] h-5 rounded-sm" style={{
+                                <div className="mx-[1px] h-5 rounded-none" style={{
                                     backgroundColor: intensity > 0 ? `rgba(16, 185, 129, ${0.1 + intensity * 0.8})` : 'hsl(var(--muted))',
                                 }} />
                             </div>;
@@ -688,7 +688,7 @@ function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
                 ))}
                 <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span>Low</span>
-                    {[0.1, 0.3, 0.5, 0.7, 0.9].map((i) => <div key={i} className="size-3 rounded-sm" style={{ backgroundColor: `rgba(16, 185, 129, ${i})` }} />)}
+                    {[0.1, 0.3, 0.5, 0.7, 0.9].map((i) => <div key={i} className="size-3 rounded-none" style={{ backgroundColor: `rgba(16, 185, 129, ${i})` }} />)}
                     <span>High</span>
                 </div>
             </div>

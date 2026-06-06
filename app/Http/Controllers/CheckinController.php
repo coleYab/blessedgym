@@ -31,7 +31,9 @@ class CheckinController extends Controller
                         ->whereDate('check_in_timestamp', today())
                         ->count();
 
-                    $member->can_checkin = $member->today_sessions_count < 2 && is_null($member->current_session_id);
+                    $member->can_checkin = $member->status === 'Active'
+                        && $member->today_sessions_count < 2
+                        && is_null($member->current_session_id);
                     $member->can_checkout = ! is_null($member->current_session_id);
 
                     $member->profile_photo_url = $member->profile_photo_path
@@ -62,6 +64,15 @@ class CheckinController extends Controller
 
         if ($member->current_session_id) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'This member is already checked in.']);
+
+            return back();
+        }
+
+        if ($member->status !== 'Active') {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => "Check-in denied. Member status is '{$member->status}'. Only active members can check in.",
+            ]);
 
             return back();
         }

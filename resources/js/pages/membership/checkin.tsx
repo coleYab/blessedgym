@@ -174,7 +174,7 @@ function MemberCard({ member }: { member: Member }) {
                                         <img
                                             src={member.profile_photo_url}
                                             alt={`${member.first_name} ${member.last_name}`}
-                                            className="w-full rounded-lg border object-cover"
+                                            className="w-full rounded-none border object-cover"
                                         />
                                     </div>
                                 ) : null}
@@ -186,7 +186,7 @@ function MemberCard({ member }: { member: Member }) {
                                         <img
                                             src={member.id_document_url}
                                             alt="ID Document"
-                                            className="w-full rounded-lg border object-cover"
+                                            className="w-full rounded-none border object-cover"
                                         />
                                     </div>
                                 ) : null}

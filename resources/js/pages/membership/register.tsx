@@ -137,7 +137,7 @@ export default function MemberRegistration() {
                                                 <select
                                                     id="registration_source"
                                                     name="registration_source"
-                                                    className="border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                                    className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                                     required
                                                 >
                                                     <option value="">
@@ -197,7 +197,7 @@ export default function MemberRegistration() {
                                                 <select
                                                     id="id_document_type"
                                                     name="id_document_type"
-                                                    className="border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                                                    className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                                 >
                                                     <option value="">
                                                         Select document
@@ -253,7 +253,7 @@ export default function MemberRegistration() {
                                             type="checkbox"
                                             name="is_verified"
                                             value="1"
-                                            className="border-input size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                            className="border-input size-4 shrink-0 rounded-none border shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                                         />
                                         <Label
                                             htmlFor="is_verified"

@@ -225,12 +225,12 @@ export default function AttendanceHistory() {
                     </div>
 
                     {showResults && searchResults.length > 0 && (
-                        <div className="bg-popover text-popover-foreground absolute z-50 mt-1 w-full rounded-lg border shadow-lg">
+                        <div className="bg-popover text-popover-foreground absolute z-50 mt-1 w-full rounded-none border shadow-lg">
                             {searchResults.map((m) => (
                                 <button
                                     key={m.id}
                                     onClick={() => handleMemberSelect(m)}
-                                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-accent first:rounded-t-lg last:rounded-b-lg"
+                                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-accent first:rounded-none last:rounded-none"
                                 >
                                     <div className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium">
                                         {m.first_name[0]}{m.last_name[0]}
@@ -247,7 +247,7 @@ export default function AttendanceHistory() {
 
                 {member ? (
                     <>
-                        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                        <div className="flex items-center justify-between rounded-none border bg-muted/30 px-4 py-3">
                             <div className="flex items-center gap-3">
                                 <div className="bg-muted flex size-9 items-center justify-center rounded-full text-sm font-medium">
                                     {member.first_name[0]}{member.last_name[0]}
@@ -286,7 +286,7 @@ export default function AttendanceHistory() {
                                                     <button
                                                         key={preset.label}
                                                         onClick={() => handlePreset(preset)}
-                                                        className="rounded-md border bg-transparent px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                        className="rounded-none border bg-transparent px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                                                     >
                                                         {preset.label}
                                                     </button>
@@ -335,7 +335,7 @@ export default function AttendanceHistory() {
 
                         {summary && (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <div className="rounded-lg border bg-card">
+                                <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
                                         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Visit Overview</p>
                                     </div>
@@ -355,7 +355,7 @@ export default function AttendanceHistory() {
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border bg-card">
+                                <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
                                         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Consistency</p>
                                     </div>
@@ -373,7 +373,7 @@ export default function AttendanceHistory() {
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border bg-card">
+                                <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
                                         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Behavior</p>
                                     </div>

@@ -5,7 +5,10 @@ import {
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
+import { NavBilling } from '@/components/nav-billing';
+import { NavEmployeeManagement } from '@/components/nav-employee-management';
 import { NavMembership } from '@/components/nav-membership';
+import { NavRevenue } from '@/components/nav-revenue';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -48,6 +51,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMembership />
+                <NavBilling />
+                <NavRevenue />
+                <NavEmployeeManagement />
             </SidebarContent>
 
             <SidebarFooter>
