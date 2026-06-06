@@ -12,16 +12,26 @@ class MembershipPlanSeeder extends Seeder
         MembershipPlan::create([
             'name' => 'Monthly Basic',
             'description' => 'Standard monthly membership with access to all basic facilities.',
-            'duration_days' => 30,
-            'price' => 49.99,
+            'base_price' => 49.99,
+            'signup_fee' => 10.00,
+            'currency' => 'USD',
+            'tax_percentage' => 5.00,
+            'duration_value' => 1,
+            'duration_unit' => 'months',
+            'benefits' => ['has_pool_access' => false, 'has_sauna_access' => false],
             'is_active' => true,
         ]);
 
         MembershipPlan::create([
             'name' => 'Quarterly Standard',
             'description' => 'Three-month plan with a small discount.',
-            'duration_days' => 90,
-            'price' => 129.99,
+            'base_price' => 129.99,
+            'signup_fee' => 15.00,
+            'currency' => 'USD',
+            'tax_percentage' => 5.00,
+            'duration_value' => 3,
+            'duration_unit' => 'months',
+            'benefits' => ['has_pool_access' => false, 'has_sauna_access' => false],
             'is_active' => true,
         ]);
     }
