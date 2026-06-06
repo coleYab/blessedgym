@@ -15,12 +15,66 @@ use App\Http\Controllers\Employee\PerformanceController;
 use App\Http\Controllers\Employee\StaffController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MembershipStatusController;
+use App\Models\CheckinLog;
+use App\Models\DebtLedger;
+use App\Models\EmployeeAttendanceLog;
+use App\Models\Member;
+use App\Models\Payment;
+use App\Models\StaffLeaveRequest;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', function () {
+        $today = today();
+        $startOfMonth = now()->startOfMonth();
+
+        return Inertia::render('dashboard', [
+            'stats' => [
+                'activeMembers' => Member::where('status', 'Active')->count(),
+                'checkedInToday' => CheckinLog::whereDate('check_in_timestamp', $today)->count(),
+                'revenueThisMonth' => (float) Payment::whereYear('payment_timestamp', now()->year)
+                    ->whereMonth('payment_timestamp', now()->month)
+                    ->sum('amount_paid'),
+                'outstandingBalance' => (float) DebtLedger::sum('outstanding_balance'),
+                'staffClockedIn' => EmployeeAttendanceLog::whereNull('clock_out_timestamp')->count(),
+                'pendingLeave' => StaffLeaveRequest::where('status', 'Pending')->count(),
+                'expiringSoon' => Member::where('status', 'Active')
+                    ->whereNotNull('end_date')
+                    ->where('end_date', '>=', $today)
+                    ->where('end_date', '<=', $today->copy()->addDays(7))
+                    ->count(),
+                'totalMembers' => Member::count(),
+                'newThisMonth' => Member::whereYear('registered_at', now()->year)
+                    ->whereMonth('registered_at', now()->month)
+                    ->count(),
+            ],
+            'recentCheckins' => CheckinLog::with('member')
+                ->latest('check_in_timestamp')
+                ->take(5)
+                ->get()
+                ->map(fn ($log) => [
+                    'id' => $log->id,
+                    'member' => $log->member ? "{$log->member->first_name} {$log->member->last_name}" : 'Unknown',
+                    'check_in' => $log->check_in_timestamp,
+                    'check_out' => $log->check_out_timestamp,
+                    'method' => $log->check_in_method,
+                ]),
+            'recentPayments' => Payment::with('member')
+                ->latest('payment_timestamp')
+                ->take(5)
+                ->get()
+                ->map(fn ($payment) => [
+                    'id' => $payment->id,
+                    'member' => $payment->member ? "{$payment->member->first_name} {$payment->member->last_name}" : 'Unknown',
+                    'amount' => (float) $payment->amount_paid,
+                    'method' => $payment->payment_method,
+                    'timestamp' => $payment->payment_timestamp,
+                ]),
+        ]);
+    })->name('dashboard');
 
     Route::prefix('membership')->name('membership.')->group(function () {
         Route::controller(MemberController::class)->group(function () {
