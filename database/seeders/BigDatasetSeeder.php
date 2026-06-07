@@ -50,7 +50,7 @@ class BigDatasetSeeder extends Seeder
         $this->seedCheckinLogs($members);
         $this->seedDebtLedger($members);
         $invoices = $this->seedInvoices($members, $plans);
-        $this->seedPayments($invoices, $members);
+        $this->seedPayments($plans, $members);
         $this->seedMembershipFreezes($members, $staffProfiles);
         $this->seedEmployeeAttendanceLogs($staffProfiles);
         $this->seedStaffLeaveRequests($staffProfiles);
@@ -440,17 +440,23 @@ class BigDatasetSeeder extends Seeder
         return $invoices;
     }
 
-    private function seedPayments(array $invoices, array $members): void
+    private function seedPayments($plans, array $members): void
     {
         $methods = ['Cash', 'Card', 'Mobile_Money'];
         $memberIds = collect($members)->pluck('id')->toArray();
+        $planIds = $plans->pluck('id')->toArray();
 
-        $bar = $this->command?->getOutput()->createProgressBar(count($invoices));
+        $bar = $this->command?->getOutput()->createProgressBar(count($members));
         $bar?->start();
 
-        foreach ($invoices as $invoice) {
+        foreach ($members as $member) {
             if (fake()->boolean(70)) {
+                $planId = fake()->randomElement($planIds);
+                $plan = $plans->find($planId);
                 $method = fake()->randomElement($methods);
+                $durationValue = fake()->numberBetween(1, 3);
+                $requiredAmount = $plan ? (float) $plan->base_price * $durationValue : fake()->randomFloat(2, 10, 500);
+
                 $metadata = match ($method) {
                     'Cash' => ['processor' => null, 'gateway_reference_id' => null, 'received_by_staff_id' => fake()->numberBetween(1, 25), 'last_four_digits' => null],
                     'Card' => ['processor' => 'Stripe', 'gateway_reference_id' => 'TXN_'.strtoupper(fake()->bothify('???_##########')), 'received_by_staff_id' => null, 'last_four_digits' => fake()->numerify('####')],
@@ -458,10 +464,13 @@ class BigDatasetSeeder extends Seeder
                 };
 
                 Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'member_id' => $invoice->member_id,
-                    'amount_paid' => $invoice->grand_total,
-                    'payment_timestamp' => fake()->dateTimeBetween($invoice->issued_date ?? '-30 days', 'now'),
+                    'plan_id' => $planId,
+                    'member_id' => (int) $member->id,
+                    'amount_paid' => $requiredAmount,
+                    'required_amount' => $requiredAmount,
+                    'duration_value' => $durationValue,
+                    'duration_unit' => $plan->duration_unit ?? 'months',
+                    'payment_timestamp' => fake()->dateTimeBetween('-30 days', 'now'),
                     'payment_method' => $method,
                     'transaction_metadata' => $metadata,
                     'refunded_at' => null,

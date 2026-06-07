@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\DebtLedger;
-use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
@@ -60,26 +59,17 @@ class DebtLedgerController extends Controller
 
     private function recalculateForMember(Member $member): void
     {
-        $totalInvoiced = (float) Invoice::whereHas('member', fn ($q) => $q->where('members.id', $member->id))
-            ->where('status', 'finalized')
-            ->sum('grand_total');
+        $payments = Payment::where('member_id', $member->id)->get();
 
-        $totalPaid = (float) Payment::where('member_id', $member->id)
-            ->sum('amount_paid');
+        $totalRequired = (float) $payments->sum('required_amount');
+        $totalPaid = (float) $payments->sum('amount_paid');
 
-        $outstanding = max($totalInvoiced - $totalPaid, 0);
+        $outstanding = max($totalRequired - $totalPaid, 0);
 
         $daysOverdue = 0;
-        if ($outstanding > 0) {
-            $overdueInvoice = Invoice::where('member_id', $member->id)
-                ->where('status', 'finalized')
-                ->where('due_date', '<', now())
-                ->orderBy('due_date', 'asc')
-                ->first();
-
-            if ($overdueInvoice) {
-                $daysOverdue = (int) $overdueInvoice->due_date->diffInDays(now());
-            }
+        if ($outstanding > 0 && $member->end_date) {
+            $daysOverdue = (int) $member->end_date->diffInDays(now(), false);
+            $daysOverdue = max($daysOverdue, 0);
         }
 
         $status = 'Settled';
@@ -92,7 +82,7 @@ class DebtLedgerController extends Controller
         DebtLedger::updateOrCreate(
             ['member_id' => $member->id],
             [
-                'total_invoiced_amount' => $totalInvoiced,
+                'total_invoiced_amount' => $totalRequired,
                 'total_paid_amount' => $totalPaid,
                 'outstanding_balance' => $outstanding,
                 'days_overdue' => $daysOverdue,

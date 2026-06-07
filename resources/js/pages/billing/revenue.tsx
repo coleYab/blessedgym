@@ -92,10 +92,9 @@ type PageProps = {
     gross_revenue: number;
     total_expenses: number;
     net_profit: number;
-    outstanding_revenue: number;
+    total_revenue_invoiced: number;
     total_refunds: number;
-    total_paid_invoices: number;
-    total_finalized_invoices: number;
+    total_paid_plans: number;
     active_members: number;
     total_members: number;
     expenses_by_category: ExpenseCategory[];
@@ -131,8 +130,8 @@ const EXPENSE_CATEGORIES = ['Utilities', 'Equipment', 'Salaries', 'Rent', 'Marke
 export default function RevenueDashboard() {
     const {
         total_revenue, gross_revenue, total_expenses, net_profit,
-        outstanding_revenue, total_refunds, total_paid_invoices,
-        total_finalized_invoices, active_members, total_members,
+        total_revenue_invoiced, total_refunds, total_paid_plans,
+        active_members, total_members,
         expenses_by_category, daily_revenue, recent_payments, refunds_list,
         revenue_by_plan, monthly_pnl, expenses, period, year, month,
     } = usePage<PageProps>().props;
@@ -207,10 +206,10 @@ export default function RevenueDashboard() {
                     totalRevenue={total_revenue}
                     totalExpenses={total_expenses}
                     netProfit={net_profit}
-                    outstandingRevenue={outstanding_revenue}
+                    outstandingRevenue={total_revenue_invoiced}
                     totalRefunds={total_refunds}
                     activeMembers={active_members}
-                    totalPaidInvoices={total_paid_invoices}
+                    totalPaidPlans={total_paid_plans}
                 />
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -414,9 +413,9 @@ function nowYear() {
     return new Date().getFullYear();
 }
 
-function KpiCards({ totalRevenue, totalExpenses, netProfit, outstandingRevenue, totalRefunds, activeMembers, totalPaidInvoices }: {
+function KpiCards({ totalRevenue, totalExpenses, netProfit, outstandingRevenue, totalRefunds, activeMembers, totalPaidPlans }: {
     totalRevenue: number; totalExpenses: number; netProfit: number;
-    outstandingRevenue: number; totalRefunds: number; activeMembers: number; totalPaidInvoices: number;
+    outstandingRevenue: number; totalRefunds: number; activeMembers: number; totalPaidPlans: number;
 }) {
     const items = [
         { label: 'Total Revenue', value: totalRevenue, icon: TrendingUp, color: 'text-emerald-600', prefix: '$' },
@@ -424,7 +423,7 @@ function KpiCards({ totalRevenue, totalExpenses, netProfit, outstandingRevenue, 
         { label: 'Net Profit', value: netProfit, icon: PiggyBank, color: netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600', prefix: '$' },
         { label: 'Outstanding', value: outstandingRevenue, icon: Receipt, color: 'text-amber-600', prefix: '$' },
         { label: 'Total Refunds', value: totalRefunds, icon: ArrowDown, color: 'text-rose-600', prefix: '$' },
-        { label: 'Paid Invoices', value: totalPaidInvoices, icon: Landmark, color: 'text-blue-600', prefix: '' },
+        { label: 'Paid Plans', value: totalPaidPlans, icon: Landmark, color: 'text-blue-600', prefix: '' },
         { label: 'Active Members', value: activeMembers, icon: ArrowUp, color: 'text-emerald-600', prefix: '' },
     ];
 

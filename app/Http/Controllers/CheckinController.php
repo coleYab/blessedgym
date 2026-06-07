@@ -25,16 +25,31 @@ class CheckinController extends Controller
                     ->orWhere('phone_number', 'like', "%{$search}%");
             })
                 ->orderBy('first_name')
+                ->with('currentPlan')
                 ->get()
                 ->map(function (Member $member) {
                     $member->today_sessions_count = CheckinLog::where('member_id', $member->id)
                         ->whereDate('check_in_timestamp', today())
                         ->count();
 
-                    $member->can_checkin = $member->status === 'Active'
+                    $hasValidPlan = $member->hasValidPlan();
+                    $member->plan_name = $member->currentPlan?->name;
+
+                    $member->can_checkin = $hasValidPlan
                         && $member->today_sessions_count < 2
                         && is_null($member->current_session_id);
+
                     $member->can_checkout = ! is_null($member->current_session_id);
+
+                    if (! $hasValidPlan) {
+                        $member->denial_reason = 'No valid plan. This member has no active paid membership.';
+                    } elseif ($member->today_sessions_count >= 2) {
+                        $member->denial_reason = 'Maximum of 2 sessions reached for today.';
+                    } elseif ($member->current_session_id) {
+                        $member->denial_reason = 'Member is already checked in.';
+                    } else {
+                        $member->denial_reason = null;
+                    }
 
                     $member->profile_photo_url = $member->profile_photo_path
                         ? Storage::url($member->profile_photo_path)
@@ -68,10 +83,10 @@ class CheckinController extends Controller
             return back();
         }
 
-        if ($member->status !== 'Active') {
+        if (! $member->hasValidPlan()) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => "Check-in denied. Member status is '{$member->status}'. Only active members can check in.",
+                'message' => 'Check-in denied. This member has no valid paid membership plan.',
             ]);
 
             return back();

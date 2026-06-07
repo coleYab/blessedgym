@@ -12,7 +12,7 @@ class PaymentHistoryController extends Controller
 {
     public function index(Request $request, Member $member): JsonResponse
     {
-        $query = Payment::with('invoice')
+        $query = Payment::with('plan')
             ->where('member_id', $member->id);
 
         if ($request->filled('method')) {

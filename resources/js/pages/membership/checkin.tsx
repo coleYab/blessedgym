@@ -27,10 +27,13 @@ type Member = {
     last_name: string;
     email: string;
     phone_number: string;
+    status: string;
+    plan_name: string | null;
     current_session_id: number | null;
     today_sessions_count: number;
     can_checkin: boolean;
     can_checkout: boolean;
+    denial_reason: string | null;
     profile_photo_url: string | null;
     id_document_url: string | null;
 };
@@ -200,6 +203,14 @@ function MemberCard({ member }: { member: Member }) {
 
             <CardContent className="space-y-3 pt-4">
                 <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <span>{member.status ?? '—'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Plan</span>
+                    <span>{member.plan_name ?? '—'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Phone</span>
                     <span>{member.phone_number}</span>
                 </div>
@@ -255,9 +266,9 @@ function MemberCard({ member }: { member: Member }) {
                     </Form>
                 )}
 
-                {!member.can_checkin && !member.can_checkout && (
+                {!member.can_checkin && !member.can_checkout && member.denial_reason && (
                     <p className="text-muted-foreground w-full text-center text-xs">
-                        Max sessions reached for today
+                        {member.denial_reason}
                     </p>
                 )}
             </CardFooter>

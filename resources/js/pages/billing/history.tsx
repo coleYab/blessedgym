@@ -20,8 +20,11 @@ import { useState } from 'react';
 type PaymentRecord = {
   id: number;
   member: { id: number; first_name: string; last_name: string; email: string } | null;
-  invoice: { id: number; invoice_number: string; grand_total: string } | null;
+  plan: { id: number; name: string } | null;
   amount_paid: string;
+  required_amount: string;
+  duration_value: number;
+  duration_unit: string;
   payment_timestamp: string;
   payment_method: string;
   transaction_metadata: {
@@ -167,9 +170,11 @@ export default function PaymentHistory() {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Member</TableHead>
-                  <TableHead>Invoice</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Required</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead>Duration</TableHead>
                   <TableHead>Reference</TableHead>
                   <TableHead>Refund</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -178,7 +183,7 @@ export default function PaymentHistory() {
               <TableBody>
                 {payments.data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center text-sm text-muted-foreground">
                       No payments match your filters.
                     </TableCell>
                   </TableRow>
@@ -193,8 +198,8 @@ export default function PaymentHistory() {
                         ? `${payment.member.first_name} ${payment.member.last_name}`
                         : '—'}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {payment.invoice?.invoice_number ?? '—'}
+                    <TableCell className="text-xs">
+                      {payment.plan?.name ?? '—'}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="gap-1 whitespace-nowrap">
@@ -203,7 +208,13 @@ export default function PaymentHistory() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">
+                      ${Number(payment.required_amount).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="font-medium">
                       ${Number(payment.amount_paid).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {payment.duration_value} {payment.duration_unit}
                     </TableCell>
                     <TableCell className="max-w-[120px] truncate font-mono text-xs text-muted-foreground">
                       {payment.transaction_metadata?.gateway_reference_id

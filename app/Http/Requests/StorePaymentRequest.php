@@ -15,9 +15,12 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
+            'plan_id' => ['required', 'integer', 'exists:membership_plans,id'],
             'member_id' => ['required', 'integer', 'exists:members,id'],
             'amount_paid' => ['required', 'numeric', 'min:0.01'],
+            'required_amount' => ['required', 'numeric', 'min:0'],
+            'duration_value' => ['required', 'integer', 'min:1'],
+            'duration_unit' => ['required', Rule::in(['days', 'weeks', 'months', 'years'])],
             'payment_timestamp' => ['required', 'date'],
             'payment_method' => ['required', Rule::in(['Cash', 'Card', 'Mobile_Money'])],
             'transaction_metadata' => ['nullable', 'array'],

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
-use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
@@ -81,7 +80,7 @@ class RevenueController extends Controller
             fputcsv($handle, ['Total Revenue', number_format($data['total_revenue'], 2)]);
             fputcsv($handle, ['Total Expenses', number_format($data['total_expenses'], 2)]);
             fputcsv($handle, ['Net Profit', number_format($data['net_profit'], 2)]);
-            fputcsv($handle, ['Outstanding Revenue', number_format($data['outstanding_revenue'], 2)]);
+            fputcsv($handle, ['Total Revenue Invoiced', number_format($data['total_revenue_invoiced'], 2)]);
             fputcsv($handle, ['Total Refunds', number_format($data['total_refunds'], 2)]);
 
             fputcsv($handle, []);
@@ -145,26 +144,20 @@ class RevenueController extends Controller
     {
         [$dateFrom, $dateTo] = $this->getDateRange($period, $year, $month);
 
-        // Revenue from payments (non-refunded portion)
         $revenueQuery = Payment::where('payment_timestamp', '>=', $dateFrom)
             ->where('payment_timestamp', '<=', $dateTo);
 
         $totalRevenue = (clone $revenueQuery)->sum(DB::raw('amount_paid - COALESCE(refund_amount, 0)'));
         $totalRefunds = (clone $revenueQuery)->sum('refund_amount');
 
-        // Raw revenue before refunds
         $grossRevenue = (clone $revenueQuery)->sum('amount_paid');
 
-        // Total expenses
         $totalExpenses = Expense::where('expense_date', '>=', $dateFrom)
             ->where('expense_date', '<=', $dateTo)
             ->sum('amount');
 
-        // Outstanding (finalized but unpaid invoices)
-        $outstandingRevenue = Invoice::where('status', 'finalized')
-            ->sum('grand_total');
+        $totalRevenueInvoiced = Payment::sum(DB::raw('required_amount - COALESCE(refund_amount, 0)'));
 
-        // Expenses by category
         $expensesByCategory = Expense::where('expense_date', '>=', $dateFrom)
             ->where('expense_date', '<=', $dateTo)
             ->select('category', DB::raw('SUM(amount) as total'))
@@ -175,7 +168,6 @@ class RevenueController extends Controller
             ->values()
             ->toArray();
 
-        // Daily revenue for trend chart
         $dailyRevenue = (clone $revenueQuery)
             ->select(DB::raw('DATE(payment_timestamp) as date'), DB::raw('SUM(amount_paid - COALESCE(refund_amount, 0)) as revenue'))
             ->groupBy(DB::raw('DATE(payment_timestamp)'))
@@ -185,8 +177,7 @@ class RevenueController extends Controller
             ->values()
             ->toArray();
 
-        // Recent payments
-        $recentPayments = Payment::with('member', 'invoice')
+        $recentPayments = Payment::with('member')
             ->orderByDesc('payment_timestamp')
             ->limit(10)
             ->get()
@@ -201,7 +192,6 @@ class RevenueController extends Controller
             ])
             ->toArray();
 
-        // Refund details
         $refundsList = Payment::whereNotNull('refunded_at')
             ->where('payment_timestamp', '>=', $dateFrom)
             ->where('payment_timestamp', '<=', $dateTo)
@@ -223,14 +213,13 @@ class RevenueController extends Controller
             'gross_revenue' => round($grossRevenue, 2),
             'total_expenses' => round($totalExpenses, 2),
             'net_profit' => round($totalRevenue - $totalExpenses, 2),
-            'outstanding_revenue' => round($outstandingRevenue, 2),
+            'total_revenue_invoiced' => round($totalRevenueInvoiced, 2),
             'total_refunds' => round($totalRefunds, 2),
             'expenses_by_category' => $expensesByCategory,
             'daily_revenue' => $dailyRevenue,
             'recent_payments' => $recentPayments,
             'refunds_list' => $refundsList,
-            'total_paid_invoices' => Invoice::where('status', 'paid')->count(),
-            'total_finalized_invoices' => Invoice::where('status', 'finalized')->count(),
+            'total_paid_plans' => Payment::whereNull('refunded_at')->count(),
             'active_members' => Member::where('status', 'Active')->count(),
             'total_members' => Member::count(),
         ];
@@ -243,8 +232,7 @@ class RevenueController extends Controller
 
         return Payment::where('payment_timestamp', '>=', $dateFrom)
             ->where('payment_timestamp', '<=', $dateTo)
-            ->join('invoices', 'payments.invoice_id', '=', 'invoices.id')
-            ->join('membership_plans', 'invoices.plan_id', '=', 'membership_plans.id')
+            ->join('membership_plans', 'payments.plan_id', '=', 'membership_plans.id')
             ->select('membership_plans.name', DB::raw('SUM(payments.amount_paid - COALESCE(payments.refund_amount, 0)) as revenue'))
             ->groupBy('membership_plans.name')
             ->orderByDesc('revenue')

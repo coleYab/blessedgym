@@ -14,9 +14,12 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'invoice_id',
+        'plan_id',
         'member_id',
         'amount_paid',
+        'required_amount',
+        'duration_value',
+        'duration_unit',
         'payment_timestamp',
         'payment_method',
         'transaction_metadata',
@@ -29,6 +32,7 @@ class Payment extends Model
     {
         return [
             'amount_paid' => 'decimal:2',
+            'required_amount' => 'decimal:2',
             'payment_timestamp' => 'datetime',
             'transaction_metadata' => 'array',
             'refunded_at' => 'datetime',
@@ -36,9 +40,9 @@ class Payment extends Model
         ];
     }
 
-    public function invoice(): BelongsTo
+    public function plan(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(MembershipPlan::class);
     }
 
     public function member(): BelongsTo

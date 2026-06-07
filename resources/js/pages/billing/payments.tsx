@@ -16,15 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-type Invoice = {
+type Plan = {
   id: number;
-  invoice_number: string;
-  grand_total: string;
-  status: string;
-  member: { id: number; first_name: string; last_name: string } | null;
-  plan: { id: number; name: string } | null;
+  name: string;
+  base_price: number;
+  duration_value: number;
+  duration_unit: string;
+  currency: string;
 };
 
 type Member = { id: number; first_name: string; last_name: string; email: string; status: string };
@@ -33,9 +33,12 @@ type PaymentMethod = 'Cash' | 'Card' | 'Mobile_Money';
 
 type Payment = {
   id: number;
-  invoice: { invoice_number: string } | null;
+  plan: { name: string } | null;
   member: { first_name: string; last_name: string } | null;
   amount_paid: string;
+  required_amount: string;
+  duration_value: number;
+  duration_unit: string;
   payment_timestamp: string;
   payment_method: PaymentMethod;
   transaction_metadata: {
@@ -48,7 +51,7 @@ type Payment = {
 
 type PageProps = {
   payments: Payment[];
-  invoices: Invoice[];
+  plans: Plan[];
   members: Member[];
 };
 
@@ -58,9 +61,29 @@ const methodIcons: Record<PaymentMethod, string> = {
   Mobile_Money: '📱',
 };
 
+const durationUnitLabels: Record<string, string> = {
+  days: 'Day(s)',
+  weeks: 'Week(s)',
+  months: 'Month(s)',
+  years: 'Year(s)',
+};
+
 export default function Payments() {
-  const { payments, invoices, members } = usePage<PageProps>().props;
+  const { payments, plans, members } = usePage<PageProps>().props;
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('Mobile_Money');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  const [durationValue, setDurationValue] = useState<string>('1');
+
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === Number(selectedPlanId)),
+    [selectedPlanId, plans],
+  );
+
+  const calculatedRequired = useMemo(() => {
+    if (!selectedPlan || !durationValue) return 0;
+    const multiplier = Number(durationValue) / selectedPlan.duration_value;
+    return selectedPlan.base_price * multiplier;
+  }, [selectedPlan, durationValue]);
 
   return (
     <>
@@ -69,7 +92,7 @@ export default function Payments() {
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
           title="Payment Collection"
-          description="Record payments via Cash, Card, or Mobile Money. Member status is updated automatically."
+          description="Record payments by selecting a member, plan, and duration. The required amount is calculated automatically."
         />
 
         <Card>
@@ -86,25 +109,6 @@ export default function Payments() {
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
-                      <Label htmlFor="invoice_id">Invoice</Label>
-                      <select
-                        id="invoice_id"
-                        name="invoice_id"
-                        className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
-                        required
-                      >
-                        <option value="">Select invoice...</option>
-                        {invoices.map((inv) => (
-                          <option key={inv.id} value={inv.id}>
-                            {inv.invoice_number} — ${Number(inv.grand_total).toFixed(2)}
-                            {inv.member ? ` — ${inv.member.first_name} ${inv.member.last_name}` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <InputError message={errors.invoice_id} />
-                    </div>
-
-                    <div className="grid gap-2">
                       <Label htmlFor="member_id">Member</Label>
                       <select
                         id="member_id"
@@ -120,6 +124,79 @@ export default function Payments() {
                         ))}
                       </select>
                       <InputError message={errors.member_id} />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="plan_id">Plan</Label>
+                      <select
+                        id="plan_id"
+                        name="plan_id"
+                        className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                        required
+                        value={selectedPlanId}
+                        onChange={(e) => {
+                          setSelectedPlanId(e.target.value);
+                          setData('plan_id', e.target.value);
+                        }}
+                      >
+                        <option value="">Select plan...</option>
+                        {plans.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (${p.base_price.toFixed(2)} / {p.duration_value} {durationUnitLabels[p.duration_unit] ?? p.duration_unit})
+                          </option>
+                        ))}
+                      </select>
+                      <InputError message={errors.plan_id} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="duration_value">Duration</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="duration_value"
+                          name="duration_value"
+                          type="number"
+                          min="1"
+                          step="1"
+                          required
+                          value={durationValue}
+                          onChange={(e) => {
+                            setDurationValue(e.target.value);
+                            setData('duration_value', e.target.value);
+                          }}
+                          className="flex-1"
+                        />
+                        {selectedPlan && (
+                          <span className="border-input flex h-9 items-center rounded-none border bg-muted px-3 text-sm text-muted-foreground">
+                            {durationUnitLabels[selectedPlan.duration_unit] ?? selectedPlan.duration_unit}
+                          </span>
+                        )}
+                      </div>
+                      {selectedPlan && (
+                        <p className="text-xs text-muted-foreground">
+                          Each {selectedPlan.duration_value} {durationUnitLabels[selectedPlan.duration_unit]?.toLowerCase() ?? selectedPlan.duration_unit} = ${selectedPlan.base_price.toFixed(2)}
+                        </p>
+                      )}
+                      <input type="hidden" name="duration_unit" value={selectedPlan?.duration_unit ?? 'months'} />
+                      <InputError message={errors.duration_value} />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="required_amount">Required Amount</Label>
+                      <div className="relative">
+                        <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                          ${calculatedRequired.toFixed(2)}
+                        </span>
+                        <input
+                          type="hidden"
+                          name="required_amount"
+                          value={calculatedRequired.toFixed(2)}
+                        />
+                        <div className="border-input flex h-9 w-full min-w-0 rounded-none border bg-muted px-3 py-1 text-base shadow-xs md:text-sm" />
+                      </div>
+                      <InputError message={errors.required_amount} />
                     </div>
                   </div>
 
@@ -166,7 +243,6 @@ export default function Payments() {
                     </div>
 
                     <div className="rounded-none border bg-muted/30 p-4">
-                      {/* Cash — show staff reference field */}
                       {selectedMethod === 'Cash' && (
                         <div className="grid gap-2 sm:grid-cols-1">
                           <div className="grid gap-2">
@@ -184,7 +260,6 @@ export default function Payments() {
                         </div>
                       )}
 
-                      {/* Card — show processor + last 4 digits */}
                       {selectedMethod === 'Card' && (
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="grid gap-2">
@@ -226,7 +301,6 @@ export default function Payments() {
                         </div>
                       )}
 
-                      {/* Mobile Money — show processor + phone reference */}
                       {selectedMethod === 'Mobile_Money' && (
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="grid gap-2">
@@ -259,6 +333,30 @@ export default function Payments() {
                     </div>
                   </div>
 
+                  {calculatedRequired > 0 && (
+                    <div className="rounded-none border bg-muted/30 p-4">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Required: </span>
+                        <span className="font-semibold">${calculatedRequired.toFixed(2)}</span>
+                        <span className="mx-2 text-muted-foreground">|</span>
+                        <span className="text-muted-foreground">Paid: </span>
+                        <span
+                          className={`font-semibold ${Number(data.amount_paid ?? 0) >= calculatedRequired ? 'text-emerald-600' : 'text-amber-600'}`}
+                        >
+                          ${Number(data.amount_paid ?? 0).toFixed(2)}
+                        </span>
+                        {Number(data.amount_paid ?? 0) >= calculatedRequired && (
+                          <span className="ml-2 text-xs text-emerald-600">✓ Fully paid</span>
+                        )}
+                        {Number(data.amount_paid ?? 0) < calculatedRequired && Number(data.amount_paid ?? 0) > 0 && (
+                          <span className="ml-2 text-xs text-amber-600">
+                            ${(calculatedRequired - Number(data.amount_paid ?? 0)).toFixed(2)} remaining
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-4 pt-2">
                     <Button disabled={processing}>
                       {processing ? 'Processing...' : 'Record Payment'}
@@ -281,18 +379,19 @@ export default function Payments() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Method</TableHead>
-                  <TableHead>Invoice</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Member</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Required</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead>Duration</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Reference</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
                       No payments recorded yet.
                     </TableCell>
                   </TableRow>
@@ -305,8 +404,8 @@ export default function Payments() {
                         {payment.payment_method === 'Mobile_Money' ? 'Mobile Money' : payment.payment_method}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {payment.invoice?.invoice_number ?? '—'}
+                    <TableCell className="text-xs">
+                      {payment.plan?.name ?? '—'}
                     </TableCell>
                     <TableCell>
                       {payment.member
@@ -314,16 +413,16 @@ export default function Payments() {
                         : '—'}
                     </TableCell>
                     <TableCell className="font-medium">
+                      ${Number(payment.required_amount).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="font-medium">
                       ${Number(payment.amount_paid).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {payment.duration_value} {payment.duration_unit}
                     </TableCell>
                     <TableCell>
                       {new Date(payment.payment_timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="max-w-[140px] truncate font-mono text-xs text-muted-foreground">
-                      {payment.transaction_metadata?.gateway_reference_id
-                        ?? payment.transaction_metadata?.received_by_staff_id
-                          ? `Staff #${payment.transaction_metadata.received_by_staff_id}`
-                          : '—'}
                     </TableCell>
                     <TableCell className="text-right">
                       <form

@@ -76,4 +76,17 @@ class Member extends Model
     {
         return $this->hasMany(CheckinLog::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function hasValidPlan(): bool
+    {
+        return $this->status === 'Active'
+            && $this->current_plan_id !== null
+            && $this->end_date !== null
+            && $this->end_date->isFuture();
+    }
 }

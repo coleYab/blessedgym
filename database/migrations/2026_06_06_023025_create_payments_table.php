@@ -10,9 +10,12 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('plan_id')->constrained('membership_plans')->cascadeOnDelete();
             $table->foreignId('member_id')->constrained()->cascadeOnDelete();
             $table->decimal('amount_paid', 12, 2);
+            $table->decimal('required_amount', 12, 2);
+            $table->integer('duration_value');
+            $table->string('duration_unit');
             $table->dateTime('payment_timestamp');
             $table->string('payment_method'); // Cash, Card, Mobile_Money
             $table->json('transaction_metadata')->nullable();
