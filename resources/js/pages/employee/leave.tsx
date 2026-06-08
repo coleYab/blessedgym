@@ -1,13 +1,13 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { CalendarCheck, CheckCircle, Plus, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -16,6 +16,9 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
     Table,
     TableBody,
@@ -24,7 +27,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { CalendarCheck, CheckCircle, Plus, XCircle } from 'lucide-react';
 
 type LeaveRequest = {
     id: number;
@@ -59,34 +61,35 @@ const STATUS_BADGE: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 const LEAVE_TYPES = ['Sick', 'Vacation', 'Personal', 'Family_Emergency', 'Other'];
 
 export default function LeaveAbsence() {
+    const { t } = useTranslation();
     const { requests, staff, managerStaff } = usePage<PageProps>().props;
 
     return (
         <>
-            <Head title="Leave & Absence" />
+            <Head title={t('employee.leave.title')} />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Leave & Absence"
-                    description="Manage staff leave requests, approvals, and absence tracking."
+                    title={t('employee.leave.title')}
+                    description={t('employee.leave.description')}
                 />
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarCheck className="size-4" />
-                        <span>{requests.data.length} request{requests.data.length !== 1 ? 's' : ''}</span>
+                        <span>{t('employee.leave.requests_count', { count: requests.data.length })}</span>
                         <span className="text-muted-foreground/50">|</span>
                         <span className="flex items-center gap-1">
                             <span className="inline-block size-2 rounded-full bg-emerald-500" />
-                            {requests.data.filter((r) => r.status === 'Approved').length} Approved
+                            {requests.data.filter((r) => r.status === 'Approved').length} {t('employee.leave.approved')}
                         </span>
                         <span className="flex items-center gap-1">
                             <span className="inline-block size-2 rounded-full bg-amber-500" />
-                            {requests.data.filter((r) => r.status === 'Pending').length} Pending
+                            {requests.data.filter((r) => r.status === 'Pending').length} {t('employee.leave.pending')}
                         </span>
                         <span className="flex items-center gap-1">
                             <span className="inline-block size-2 rounded-full bg-rose-500" />
-                            {requests.data.filter((r) => r.status === 'Denied').length} Denied
+                            {requests.data.filter((r) => r.status === 'Denied').length} {t('employee.leave.denied')}
                         </span>
                     </div>
 
@@ -95,19 +98,19 @@ export default function LeaveAbsence() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Leave Requests</CardTitle>
+                        <CardTitle>{t('employee.leave.requests_title')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Staff</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Dates</TableHead>
-                                    <TableHead>Reason</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Approved By</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t('employee.leave.staff')}</TableHead>
+                                    <TableHead>{t('employee.leave.type')}</TableHead>
+                                    <TableHead>{t('employee.leave.dates')}</TableHead>
+                                    <TableHead>{t('employee.leave.reason')}</TableHead>
+                                    <TableHead>{t('employee.leave.status')}</TableHead>
+                                    <TableHead>{t('employee.leave.approved_by')}</TableHead>
+                                    <TableHead className="text-right">{t('employee.leave.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -116,7 +119,7 @@ export default function LeaveAbsence() {
                                         <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2 py-6">
                                                 <CalendarCheck className="size-8 text-muted-foreground/50" />
-                                                <p>No leave requests yet.</p>
+                                                <p>{t('employee.leave.no_requests')}</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -184,12 +187,14 @@ export default function LeaveAbsence() {
                                                             method="post"
                                                             className="inline"
                                                             onSubmit={(e) => {
-                                                                if (!confirm('Delete this leave request?')) e.preventDefault();
+                                                                if (!confirm(t('employee.leave.confirm_delete'))) {
+e.preventDefault();
+}
                                                             }}
                                                         >
                                                             <input type="hidden" name="_method" value="delete" />
                                                             <Button type="submit" variant="ghost" size="sm">
-                                                                Delete
+                                                                {t('employee.leave.delete')}
                                                             </Button>
                                                         </form>
                                                     </>
@@ -211,6 +216,7 @@ export default function LeaveAbsence() {
 }
 
 function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     return (
@@ -218,7 +224,7 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="mr-1 size-4" />
-                    Apply for Leave
+                    {t('employee.leave.apply')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -232,21 +238,21 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
                     {({ processing, errors }) => (
                         <>
                             <DialogHeader>
-                                <DialogTitle>Apply for Leave</DialogTitle>
-                                <DialogDescription>
-                                    Submit a leave request for manager approval.
-                                </DialogDescription>
+                            <DialogTitle>{t('employee.leave.apply_title')}</DialogTitle>
+                            <DialogDescription>
+                                {t('employee.leave.apply_desc')}
+                            </DialogDescription>
                             </DialogHeader>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="staff_profile_id">Staff Member</Label>
+                                <Label htmlFor="staff_profile_id">{t('employee.leave.staff_member')}</Label>
                                 <select
                                     id="staff_profile_id"
                                     name="staff_profile_id"
                                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     required
                                 >
-                                    <option value="">Select staff...</option>
+                                    <option value="">{t('employee.leave.select_staff')}</option>
                                     {staff.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
@@ -255,14 +261,14 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="leave_type">Leave Type</Label>
+                                <Label htmlFor="leave_type">{t('employee.leave.leave_type')}</Label>
                                 <select
                                     id="leave_type"
                                     name="leave_type"
                                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     required
                                 >
-                                    <option value="">Select type...</option>
+                                    <option value="">{t('employee.leave.select_type')}</option>
                                     {LEAVE_TYPES.map((t) => (
                                         <option key={t} value={t}>{t.replace('_', ' ')}</option>
                                     ))}
@@ -272,19 +278,19 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="start_date">Start Date</Label>
+                                    <Label htmlFor="start_date">{t('employee.leave.start')}</Label>
                                     <Input id="start_date" name="start_date" type="date" required />
                                     <InputError message={errors.start_date} />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="end_date">End Date</Label>
+                                    <Label htmlFor="end_date">{t('employee.leave.end')}</Label>
                                     <Input id="end_date" name="end_date" type="date" required />
                                     <InputError message={errors.end_date} />
                                 </div>
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="reason">Reason (optional)</Label>
+                                <Label htmlFor="reason">{t('employee.leave.reason_label')}</Label>
                                 <textarea
                                     id="reason"
                                     name="reason"
@@ -298,10 +304,10 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
 
                             <div className="flex items-center justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                                    Cancel
+                                    {t('employee.leave.cancel')}
                                 </Button>
                                 <Button disabled={processing}>
-                                    {processing ? 'Submitting...' : 'Submit Request'}
+                                    {processing ? t('employee.leave.submitting') : t('employee.leave.submit')}
                                 </Button>
                             </div>
                         </>
@@ -313,6 +319,7 @@ function ApplyLeaveDialog({ staff }: { staff: StaffOption[] }) {
 }
 
 function ApproveDialog({ requestId, managerStaff }: { requestId: number; managerStaff: StaffOption[] }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     return (
@@ -320,7 +327,7 @@ function ApproveDialog({ requestId, managerStaff }: { requestId: number; manager
             <DialogTrigger asChild>
                 <Button size="sm" variant="default">
                     <CheckCircle className="mr-1 size-3" />
-                    Approve
+                    {t('employee.leave.approve')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
@@ -333,21 +340,21 @@ function ApproveDialog({ requestId, managerStaff }: { requestId: number; manager
                     {({ processing, errors }) => (
                         <>
                             <DialogHeader>
-                                <DialogTitle>Approve Leave Request</DialogTitle>
-                                <DialogDescription>
-                                    Select the manager authorizing this approval.
-                                </DialogDescription>
+                            <DialogTitle>{t('employee.leave.approve_title')}</DialogTitle>
+                            <DialogDescription>
+                                {t('employee.leave.approve_desc')}
+                            </DialogDescription>
                             </DialogHeader>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="approved_by">Approving Manager</Label>
+                                <Label htmlFor="approved_by">{t('employee.leave.approving_manager')}</Label>
                                 <select
                                     id="approved_by"
                                     name="approved_by"
                                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                     required
                                 >
-                                    <option value="">Select manager...</option>
+                                    <option value="">{t('employee.leave.select_manager')}</option>
                                     {managerStaff.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
@@ -357,10 +364,10 @@ function ApproveDialog({ requestId, managerStaff }: { requestId: number; manager
 
                             <div className="flex items-center justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                                    Cancel
+                                    {t('employee.leave.cancel')}
                                 </Button>
                                 <Button disabled={processing}>
-                                    {processing ? 'Approving...' : 'Confirm Approval'}
+                                    {processing ? t('employee.leave.approving') : t('employee.leave.confirm_approval')}
                                 </Button>
                             </div>
                         </>
@@ -372,6 +379,7 @@ function ApproveDialog({ requestId, managerStaff }: { requestId: number; manager
 }
 
 function DenyDialog({ requestId }: { requestId: number }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     return (
@@ -379,7 +387,7 @@ function DenyDialog({ requestId }: { requestId: number }) {
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
                     <XCircle className="mr-1 size-3" />
-                    Deny
+                    {t('employee.leave.reject')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
@@ -392,14 +400,14 @@ function DenyDialog({ requestId }: { requestId: number }) {
                     {({ processing, errors }) => (
                         <>
                             <DialogHeader>
-                                <DialogTitle>Deny Leave Request</DialogTitle>
-                                <DialogDescription>
-                                    Provide a reason for denying this request.
-                                </DialogDescription>
+                            <DialogTitle>{t('employee.leave.deny_title')}</DialogTitle>
+                            <DialogDescription>
+                                {t('employee.leave.deny_desc')}
+                            </DialogDescription>
                             </DialogHeader>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="denial_reason">Reason for Denial</Label>
+                                <Label htmlFor="denial_reason">{t('employee.leave.denial_reason')}</Label>
                                 <textarea
                                     id="denial_reason"
                                     name="denial_reason"
@@ -411,10 +419,10 @@ function DenyDialog({ requestId }: { requestId: number }) {
 
                             <div className="flex items-center justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                                    Cancel
+                                    {t('employee.leave.cancel')}
                                 </Button>
                                 <Button disabled={processing} variant="destructive">
-                                    {processing ? 'Denying...' : 'Deny Request'}
+                                    {processing ? t('employee.leave.denying') : t('employee.leave.deny_request')}
                                 </Button>
                             </div>
                         </>
@@ -427,7 +435,7 @@ function DenyDialog({ requestId }: { requestId: number }) {
 
 LeaveAbsence.layout = {
     breadcrumbs: [
-        { title: 'Employee Management', href: '/employee/leave' },
-        { title: 'Leave & Absence', href: '/employee/leave' },
+        { title: i18n.t('employee.leave.breadcrumb_management'), href: '/employee/leave' },
+        { title: i18n.t('employee.leave.title'), href: '/employee/leave' },
     ],
 };

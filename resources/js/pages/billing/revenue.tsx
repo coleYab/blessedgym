@@ -1,4 +1,18 @@
 import { Form, Head, router, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
+import {
+    ArrowDown,
+    ArrowUp,
+    Download,
+    FileDown,
+    Landmark,
+    PiggyBank,
+    Plus,
+    Receipt,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 import {
     Area,
@@ -28,9 +42,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -39,6 +50,9 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
     Table,
     TableBody,
@@ -47,18 +61,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    ArrowDown,
-    ArrowUp,
-    Download,
-    FileDown,
-    Landmark,
-    PiggyBank,
-    Plus,
-    Receipt,
-    TrendingDown,
-    TrendingUp,
-} from 'lucide-react';
 
 type Expense = {
     id: number;
@@ -128,6 +130,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const EXPENSE_CATEGORIES = ['Utilities', 'Equipment', 'Salaries', 'Rent', 'Marketing', 'Supplies', 'Other'];
 
 export default function RevenueDashboard() {
+    const { t } = useTranslation();
     const {
         total_revenue, gross_revenue, total_expenses, net_profit,
         total_revenue_invoiced, total_refunds, total_paid_plans,
@@ -142,13 +145,13 @@ export default function RevenueDashboard() {
 
     return (
         <>
-            <Head title="Revenue Management" />
+            <Head title={t('billing.revenue.title')} />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <div className="flex items-start justify-between">
                     <Heading
-                        title="Revenue Management"
-                        description="Income, expenses, profit & loss, and financial reporting."
+                        title={t('billing.revenue.title')}
+                        description={t('billing.revenue.description')}
                     />
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => navigate({ period, year, month, export: 'csv' })} asChild>
@@ -226,7 +229,7 @@ export default function RevenueDashboard() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-                                No revenue data for this period.
+                                {t('billing.revenue.no_data')}
                             </div>
                         )}
                     </Section>
@@ -296,7 +299,7 @@ export default function RevenueDashboard() {
                 <Separator />
 
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Expense Tracking</h3>
+                    <h3 className="text-lg font-semibold">{t('billing.revenue.expense_tracking')}</h3>
                     <AddExpenseDialog />
                 </div>
 
@@ -334,7 +337,11 @@ export default function RevenueDashboard() {
                                         <TableCell className="max-w-[150px] truncate text-xs text-muted-foreground">{exp.notes ?? '—'}</TableCell>
                                         <TableCell className="text-right">
                                             <form action={`/billing/expenses/${exp.id}`} method="post" className="inline"
-                                                onSubmit={(e) => { if (!confirm('Delete this expense?')) e.preventDefault(); }}>
+                                                onSubmit={(e) => {
+ if (!confirm('Delete this expense?')) {
+e.preventDefault();
+} 
+}}>
                                                 <input type="hidden" name="_method" value="delete" />
                                                 <Button type="submit" variant="ghost" size="sm">Delete</Button>
                                             </form>
@@ -418,9 +425,9 @@ function KpiCards({ totalRevenue, totalExpenses, netProfit, outstandingRevenue, 
     outstandingRevenue: number; totalRefunds: number; activeMembers: number; totalPaidPlans: number;
 }) {
     const items = [
-        { label: 'Total Revenue', value: totalRevenue, icon: TrendingUp, color: 'text-emerald-600', prefix: '$' },
-        { label: 'Total Expenses', value: totalExpenses, icon: TrendingDown, color: 'text-rose-600', prefix: '$' },
-        { label: 'Net Profit', value: netProfit, icon: PiggyBank, color: netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600', prefix: '$' },
+        { label: i18n.t('billing.revenue.total'), value: totalRevenue, icon: TrendingUp, color: 'text-emerald-600', prefix: '$' },
+        { label: i18n.t('billing.revenue.expenses'), value: totalExpenses, icon: TrendingDown, color: 'text-rose-600', prefix: '$' },
+        { label: i18n.t('billing.revenue.profit'), value: netProfit, icon: PiggyBank, color: netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600', prefix: '$' },
         { label: 'Outstanding', value: outstandingRevenue, icon: Receipt, color: 'text-amber-600', prefix: '$' },
         { label: 'Total Refunds', value: totalRefunds, icon: ArrowDown, color: 'text-rose-600', prefix: '$' },
         { label: 'Paid Plans', value: totalPaidPlans, icon: Landmark, color: 'text-blue-600', prefix: '' },
@@ -539,6 +546,6 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
 
 RevenueDashboard.layout = {
     breadcrumbs: [
-        { title: 'Revenue Management', href: '/billing/revenue' },
+        { title: i18n.t('billing.revenue.title'), href: '/billing/revenue' },
     ],
 };

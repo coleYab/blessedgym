@@ -1,4 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import PlanController from '@/actions/App/Http/Controllers/Billing/PlanController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -44,16 +46,17 @@ type PageProps = {
 };
 
 export default function Plans() {
+  const { t } = useTranslation();
   const { plans } = usePage<PageProps>().props;
 
   return (
     <>
-      <Head title="Flexible Plan Creation" />
+      <Head title={t('billing.plans.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Flexible Plan Creation"
-          description="Create and manage membership plans with custom duration, pricing, and benefit flags."
+          title={t('billing.plans.title')}
+          description={t('billing.plans.description')}
         />
 
         <Card>
@@ -72,13 +75,13 @@ export default function Plans() {
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="grid gap-2">
-                        <Label htmlFor="name">Plan Name</Label>
+                        <Label htmlFor="name">{t('billing.plans.name')}</Label>
                         <Input id="name" name="name" required />
                         <InputError message={errors.name} />
                       </div>
 
                       <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t('billing.plans.description_label')}</Label>
                         <Input id="description" name="description" />
                         <InputError message={errors.description} />
                       </div>
@@ -129,7 +132,7 @@ export default function Plans() {
                   <Separator />
 
                   <div>
-                    <h3 className="mb-4 text-sm font-medium">Duration</h3>
+                    <h3 className="mb-4 text-sm font-medium">{t('billing.plans.duration')}</h3>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="grid gap-2">
@@ -147,7 +150,7 @@ export default function Plans() {
                           required
                         >
                           <option value="">Select unit...</option>
-                          <option value="days">Days</option>
+                          <option value="days">{t('billing.plans.days')}</option>
                           <option value="weeks">Weeks</option>
                           <option value="months">Months</option>
                           <option value="years">Years</option>
@@ -245,7 +248,7 @@ export default function Plans() {
 
                   <div className="flex items-center gap-4 pt-2">
                     <Button disabled={processing}>
-                      {processing ? 'Creating...' : 'Create Plan'}
+                      {processing ? t('billing.plans.create') : t('billing.plans.create')}
                     </Button>
                   </div>
                 </>
@@ -264,8 +267,8 @@ export default function Plans() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Duration</TableHead>
+                  <TableHead>{t('billing.plans.name')}</TableHead>
+                  <TableHead>{t('billing.plans.duration')}</TableHead>
                   <TableHead>Base Price</TableHead>
                   <TableHead>Signup Fee</TableHead>
                   <TableHead>Benefits</TableHead>
@@ -277,7 +280,7 @@ export default function Plans() {
                 {plans.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
-                      No plans created yet.
+                      {t('billing.plans.no_plans')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -310,7 +313,7 @@ export default function Plans() {
                     <TableCell>{plan.member_count}</TableCell>
                     <TableCell>
                       <Badge variant={plan.is_active ? 'default' : 'secondary'}>
-                        {plan.is_active ? 'Active' : 'Inactive'}
+                        {plan.is_active ? t('billing.plans.active') : t('billing.plans.inactive')}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -326,7 +329,7 @@ export default function Plans() {
 
 Plans.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/plans' },
-    { title: 'Flexible Plan Creation', href: '/billing/plans' },
+    { title: i18n.t('billing.billing'), href: '/billing/plans' },
+    { title: i18n.t('billing.plans.title'), href: '/billing/plans' },
   ],
 };

@@ -64,7 +64,10 @@ The agent should insert variant HTML at insertLine.`);
   const text = argVal(args, '--text');
   const pageUrl = argVal(args, '--page-url');
 
-  if (!id) { console.error('Missing --id'); process.exit(1); }
+  if (!id) {
+ console.error('Missing --id'); process.exit(1); 
+}
+
   if (!elementId && !classes && !query) {
     console.error('Need at least one of: --element-id, --classes, --query');
     process.exit(1);
@@ -79,20 +82,30 @@ The agent should insert variant HTML at insertLine.`);
   // don't silently write variants into a file the next build will wipe.
   let targetFile = filePath;
   let matchedQuery = null;
+
   if (!targetFile) {
     for (const q of queries) {
       targetFile = findFileWithQuery(q, process.cwd(), genOpts);
-      if (targetFile) { matchedQuery = q; break; }
+
+      if (targetFile) {
+ matchedQuery = q; break; 
+}
     }
+
     if (!targetFile) {
       // Nothing in source. Did the element show up in a generated file? That
       // tells the agent "fall back to the agent-driven flow" vs "element just
       // doesn't exist in this project."
       let generatedHit = null;
+
       for (const q of queries) {
         generatedHit = findFileWithQuery(q, process.cwd(), { ...genOpts, includeGenerated: true });
-        if (generatedHit) break;
+
+        if (generatedHit) {
+break;
+}
       }
+
       if (generatedHit) {
         console.error(JSON.stringify({
           error: 'element_not_in_source',
@@ -107,6 +120,7 @@ The agent should insert variant HTML at insertLine.`);
           hint: 'Element not found in any project file. It may be runtime-injected (JS component, etc.). See "Handle fallback" in live.md.',
         }));
       }
+
       process.exit(1);
     }
   } else {
@@ -119,6 +133,7 @@ The agent should insert variant HTML at insertLine.`);
       }));
       process.exit(1);
     }
+
     matchedQuery = queries[0];
   }
 
@@ -130,28 +145,37 @@ The agent should insert variant HTML at insertLine.`);
   // by the picked element's textContent. Without `--text`, fall back to the
   // legacy first-match behavior so unmodified callers keep working.
   let match = null;
+
   if (text) {
     const candidates = [];
+
     for (const q of queries) {
       const all = findAllElements(lines, q, tag);
+
       for (const c of all) {
         if (!candidates.some((x) => x.startLine === c.startLine)) {
           candidates.push(c);
         }
       }
+
       // Once a more-specific query (ID, full className combo) yielded a unique
       // result, stop — falling through to the loose tag+single-class query
       // would readmit the siblings we just disambiguated past.
-      if (candidates.length === 1) break;
+      if (candidates.length === 1) {
+break;
+}
     }
+
     if (candidates.length === 0) {
       console.error(JSON.stringify({ error: 'Found file but could not locate element in ' + targetFile + '. Searched for: ' + queries.join(', ') }));
       process.exit(1);
     }
+
     if (candidates.length === 1) {
       match = candidates[0];
     } else {
       const filtered = filterByText(candidates, lines, text);
+
       if (filtered.length === 1) {
         match = filtered[0];
       } else if (filtered.length === 0) {
@@ -180,8 +204,12 @@ The agent should insert variant HTML at insertLine.`);
   } else {
     for (const q of queries) {
       match = findElement(lines, q, tag);
-      if (match) break;
+
+      if (match) {
+break;
+}
     }
+
     if (!match) {
       console.error(JSON.stringify({ error: 'Found file but could not locate element in ' + targetFile + '. Searched for: ' + queries.join(', ') }));
       process.exit(1);
@@ -215,10 +243,15 @@ The agent should insert variant HTML at insertLine.`);
   // otherwise skip buffer awareness so unrelated staged edits on another page
   // do not block normal wrap work.
   let pendingBuffer = { entries: [] };
-  try { pendingBuffer = readManualEditsBuffer(process.cwd()); } catch {}
+
+  try {
+ pendingBuffer = readManualEditsBuffer(process.cwd()); 
+} catch {}
+
   const pendingEntriesForTarget = pageUrl
     ? []
     : pendingEntriesThatMayAffectWrap(pendingBuffer.entries, targetFile, originalLines, startLine, process.cwd());
+
   if (pendingEntriesForTarget.length > 0) {
     console.error(JSON.stringify({
       error: 'missing_page_url_with_pending_edits',
@@ -227,18 +260,28 @@ The agent should insert variant HTML at insertLine.`);
     }));
     process.exit(1);
   }
+
   if (pageUrl) {
     const failedBufferedOps = [];
+
     for (const entry of pendingBuffer.entries || []) {
-      if (entry.pageUrl !== pageUrl) continue;
+      if (entry.pageUrl !== pageUrl) {
+continue;
+}
+
       for (const op of entry.ops || []) {
         const mayAffectWrap = manualEditMayAffectWrap(op, targetFile, originalLines, startLine, process.cwd());
         const result = applyBufferedManualEditToLines(originalLines, startLine, op);
+
         if (result.changed) {
           originalLines = result.lines;
           continue;
         }
-        if (!mayAffectWrap) continue;
+
+        if (!mayAffectWrap) {
+continue;
+}
+
         failedBufferedOps.push({
           entryId: entry.id,
           ref: op?.ref || null,
@@ -247,6 +290,7 @@ The agent should insert variant HTML at insertLine.`);
         });
       }
     }
+
     if (failedBufferedOps.length > 0) {
       console.error(JSON.stringify({
         error: 'manual_edit_buffer_apply_failed',
@@ -344,15 +388,21 @@ The agent should insert variant HTML at insertLine.`);
 
 function argVal(args, flag) {
   const prefix = flag + '=';
+
   for (const arg of args) {
-    if (arg.startsWith(prefix)) return arg.slice(prefix.length);
+    if (arg.startsWith(prefix)) {
+return arg.slice(prefix.length);
+}
   }
+
   const idx = args.indexOf(flag);
+
   return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : null;
 }
 
 function pendingEntriesThatMayAffectWrap(entries, targetFile, originalLines, selectionStartLine, cwd) {
   const targetAbs = path.resolve(cwd, targetFile);
+
   return (entries || []).filter((entry) => {
     return (entry.ops || []).some((op) => {
       return manualEditMayAffectWrap(op, targetAbs, originalLines, selectionStartLine, cwd);
@@ -362,21 +412,38 @@ function pendingEntriesThatMayAffectWrap(entries, targetFile, originalLines, sel
 
 function manualEditMayAffectWrap(op, targetFile, originalLines, selectionStartLine, cwd) {
   const targetAbs = path.resolve(cwd, targetFile);
-  if (manualEditHintFallsInsideSelection(op, targetAbs, originalLines, selectionStartLine, cwd)) return true;
-  if (manualEditLocatorMatchesSelection(op, originalLines)) return true;
+
+  if (manualEditHintFallsInsideSelection(op, targetAbs, originalLines, selectionStartLine, cwd)) {
+return true;
+}
+
+  if (manualEditLocatorMatchesSelection(op, originalLines)) {
+return true;
+}
+
   if (typeof op?.originalText === 'string' && op.originalText.length > 0) {
     return originalLines.join('\n').includes(op.originalText);
   }
+
   return false;
 }
 
 function manualEditHintFallsInsideSelection(op, targetAbs, originalLines, selectionStartLine, cwd) {
   const hintFile = op?.sourceHint?.file;
   const hintedLine = Number(op?.sourceHint?.line);
-  if (!hintFile || !Number.isFinite(hintedLine)) return false;
+
+  if (!hintFile || !Number.isFinite(hintedLine)) {
+return false;
+}
+
   const hintAbs = path.isAbsolute(hintFile) ? hintFile : path.resolve(cwd, hintFile);
-  if (path.resolve(hintAbs) !== targetAbs) return false;
+
+  if (path.resolve(hintAbs) !== targetAbs) {
+return false;
+}
+
   const hintedIndex = hintedLine - 1 - selectionStartLine;
+
   return hintedIndex >= 0
     && hintedIndex < originalLines.length
     && typeof op?.originalText === 'string'
@@ -384,7 +451,10 @@ function manualEditHintFallsInsideSelection(op, targetAbs, originalLines, select
 }
 
 function manualEditLocatorMatchesSelection(op, originalLines) {
-  if (!op || typeof op.originalText !== 'string' || op.originalText.length === 0) return false;
+  if (!op || typeof op.originalText !== 'string' || op.originalText.length === 0) {
+return false;
+}
+
   return originalLines.some((line) => (
     line.includes(op.originalText) && lineMatchesManualEditLocator(line, op)
   ));
@@ -408,23 +478,37 @@ function applyBufferedManualEditToLines(originalLines, selectionStartLine, op) {
   });
 
   const hintedLine = Number(op.sourceHint?.line);
+
   if (Number.isFinite(hintedLine)) {
     const hintedIndex = hintedLine - 1 - selectionStartLine;
+
     if (hintedIndex >= 0 && hintedIndex < originalLines.length && originalLines[hintedIndex].includes(op.originalText)) {
       return replaceLine(hintedIndex);
     }
   }
 
   const locatorMatches = [];
+
   for (let index = 0; index < originalLines.length; index += 1) {
     const line = originalLines[index];
-    if (!line.includes(op.originalText)) continue;
-    if (!lineMatchesManualEditLocator(line, op)) continue;
+
+    if (!line.includes(op.originalText)) {
+continue;
+}
+
+    if (!lineMatchesManualEditLocator(line, op)) {
+continue;
+}
+
     locatorMatches.push(index);
   }
-  if (locatorMatches.length === 1) return replaceLine(locatorMatches[0]);
+
+  if (locatorMatches.length === 1) {
+return replaceLine(locatorMatches[0]);
+}
 
   const originalBlock = originalLines.join('\n');
+
   if (countOccurrences(originalBlock, op.originalText) === 1) {
     return {
       lines: replaceOnce(originalBlock, op.originalText, op.newText).split('\n'),
@@ -438,18 +522,27 @@ function applyBufferedManualEditToLines(originalLines, selectionStartLine, op) {
 function lineMatchesManualEditLocator(line, op) {
   if (op.tag) {
     const tagRe = new RegExp('<\\s*' + escapeRegExp(op.tag) + '(?=[\\s>/]|$)', 'i');
-    if (!tagRe.test(line)) return false;
+
+    if (!tagRe.test(line)) {
+return false;
+}
   }
 
   if (op.elementId) {
     const id = escapeRegExp(op.elementId);
     const idRe = new RegExp('\\bid\\s*=\\s*["\']' + id + '["\']');
-    if (!idRe.test(line)) return false;
+
+    if (!idRe.test(line)) {
+return false;
+}
   }
 
   const classes = Array.isArray(op.classes) ? op.classes.filter(Boolean) : [];
+
   for (const className of classes) {
-    if (!line.includes(className)) return false;
+    if (!line.includes(className)) {
+return false;
+}
   }
 
   return true;
@@ -457,17 +550,29 @@ function lineMatchesManualEditLocator(line, op) {
 
 function replaceOnce(value, needle, replacement) {
   const index = value.indexOf(needle);
-  if (index === -1) return value;
+
+  if (index === -1) {
+return value;
+}
+
   return value.slice(0, index) + replacement + value.slice(index + needle.length);
 }
 
 function countOccurrences(value, needle) {
-  if (!needle) return 0;
+  if (!needle) {
+return 0;
+}
+
   let count = 0;
   let index = 0;
+
   while (true) {
     index = value.indexOf(needle, index);
-    if (index === -1) return count;
+
+    if (index === -1) {
+return count;
+}
+
     count += 1;
     index += needle.length;
   }
@@ -494,11 +599,13 @@ function buildSearchQueries(elementId, classes, tag, query) {
   // convention the file uses will match.
   if (classes) {
     const classList = splitClassList(classes);
+
     if (classList.length > 1) {
       const joined = classList.join(' ');
       const sorted = [...classList].sort((a, b) => b.length - a.length);
       queries.push('class="' + joined + '"');
       queries.push('className="' + joined + '"');
+
       for (const className of sorted) {
         queries.push(className);
       }
@@ -529,21 +636,25 @@ function splitClassList(classes) {
 
 function detectCommentSyntax(filePath) {
   const ext = path.extname(filePath).toLowerCase();
+
   if (ext === '.jsx' || ext === '.tsx') {
     return { open: '{/*', close: '*/}' };
   }
+
   // HTML, Vue, Svelte, Astro all use HTML comments
   return { open: '<!--', close: '-->' };
 }
 
 function detectStyleMode(filePath) {
   const ext = path.extname(filePath).toLowerCase();
+
   if (ext === '.astro') {
     return {
       mode: 'astro-global-prefixed',
       styleTag: '<style is:inline data-impeccable-css="SESSION_ID">',
     };
   }
+
   return {
     mode: 'scoped',
     styleTag: '<style data-impeccable-css="SESSION_ID">',
@@ -551,12 +662,16 @@ function detectStyleMode(filePath) {
 }
 
 function buildCssSelectorPrefixExamples(styleMode, count) {
-  if (styleMode !== 'astro-global-prefixed') return [];
+  if (styleMode !== 'astro-global-prefixed') {
+return [];
+}
+
   return Array.from({ length: count }, (_, i) => `[data-impeccable-variant="${i + 1}"]`);
 }
 
 function buildCssAuthoring(styleMode, count) {
   const variantNumbers = Array.from({ length: count }, (_, i) => i + 1);
+
   if (styleMode.mode === 'astro-global-prefixed') {
     return {
       mode: styleMode.mode,
@@ -577,6 +692,7 @@ function buildCssAuthoring(styleMode, count) {
       ],
     };
   }
+
   return {
     mode: styleMode.mode,
     styleTag: styleMode.styleTag,
@@ -605,34 +721,66 @@ function findFileWithQuery(query, cwd, genOpts = {}) {
 
   for (const dir of searchDirs) {
     const absDir = path.join(cwd, dir);
-    if (!fs.existsSync(absDir)) continue;
+
+    if (!fs.existsSync(absDir)) {
+continue;
+}
+
     const result = searchDir(absDir, query, seen, 0, genOpts);
-    if (result) return result;
+
+    if (result) {
+return result;
+}
   }
+
   return null;
 }
 
 function searchDir(dir, query, seen, depth, genOpts) {
-  if (depth > 5) return null; // don't go too deep
+  if (depth > 5) {
+return null;
+} // don't go too deep
+
   const realDir = fs.realpathSync(dir);
-  if (seen.has(realDir)) return null;
+
+  if (seen.has(realDir)) {
+return null;
+}
+
   seen.add(realDir);
 
   let entries;
-  try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
-  catch { return null; }
+
+  try {
+ entries = fs.readdirSync(dir, { withFileTypes: true }); 
+} catch {
+ return null; 
+}
 
   // Check files first
   for (const entry of entries) {
-    if (!entry.isFile()) continue;
+    if (!entry.isFile()) {
+continue;
+}
+
     const ext = path.extname(entry.name).toLowerCase();
-    if (!EXTENSIONS.includes(ext)) continue;
+
+    if (!EXTENSIONS.includes(ext)) {
+continue;
+}
 
     const filePath = path.join(dir, entry.name);
-    if (!genOpts.includeGenerated && isGeneratedFile(filePath, genOpts)) continue;
+
+    if (!genOpts.includeGenerated && isGeneratedFile(filePath, genOpts)) {
+continue;
+}
+
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
-      if (content.includes(query)) return filePath;
+
+      if (content.includes(query)) {
+return filePath;
+}
     } catch { /* skip unreadable files */ }
   }
 
@@ -641,10 +789,19 @@ function searchDir(dir, query, seen, depth, genOpts) {
   // the includeGenerated second-pass can still find the element there and
   // report `generatedMatch`.
   for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    if (entry.name === 'node_modules' || entry.name === '.git') continue;
+    if (!entry.isDirectory()) {
+continue;
+}
+
+    if (entry.name === 'node_modules' || entry.name === '.git') {
+continue;
+}
+
     const result = searchDir(path.join(dir, entry.name), query, seen, depth + 1, genOpts);
-    if (result) return result;
+
+    if (result) {
+return result;
+}
   }
 
   return null;
@@ -675,28 +832,48 @@ const OPENER_RE = /<([A-Za-z][A-Za-z0-9]*)(?=[\s/>]|$)/;
  */
 function minLeadingSpaces(lines) {
   let min = Infinity;
+
   for (const l of lines) {
-    if (l.trim() === '') continue;
+    if (l.trim() === '') {
+continue;
+}
+
     const m = l.match(/^(\s*)/);
-    if (m && m[1].length < min) min = m[1].length;
+
+    if (m && m[1].length < min) {
+min = m[1].length;
+}
   }
+
   return min === Infinity ? 0 : min;
 }
 
 function findElement(lines, query, tag = null) {
   // Iterate all matches — the first substring hit isn't always the right one.
   for (let i = 0; i < lines.length; i++) {
-    if (!lines[i].includes(query)) continue;
+    if (!lines[i].includes(query)) {
+continue;
+}
 
     const stripped = lines[i].trim();
-    if (stripped.startsWith('<!--') || stripped.startsWith('{/*') || stripped.startsWith('//')) continue;
+
+    if (stripped.startsWith('<!--') || stripped.startsWith('{/*') || stripped.startsWith('//')) {
+continue;
+}
+
     // Skip lines already inside a variant wrapper
-    if (lines[i].includes('data-impeccable-variant')) continue;
+    if (lines[i].includes('data-impeccable-variant')) {
+continue;
+}
 
     const openerLine = findOpenerLine(lines, i, tag);
-    if (openerLine === -1) continue;
+
+    if (openerLine === -1) {
+continue;
+}
 
     const endLine = findClosingLine(lines, openerLine);
+
     return { startLine: openerLine, endLine };
   }
 
@@ -713,18 +890,37 @@ function findElement(lines, query, tag = null) {
 function findAllElements(lines, query, tag = null) {
   const out = [];
   const seen = new Set();
+
   for (let i = 0; i < lines.length; i++) {
-    if (!lines[i].includes(query)) continue;
+    if (!lines[i].includes(query)) {
+continue;
+}
+
     const stripped = lines[i].trim();
-    if (stripped.startsWith('<!--') || stripped.startsWith('{/*') || stripped.startsWith('//')) continue;
-    if (lines[i].includes('data-impeccable-variant')) continue;
+
+    if (stripped.startsWith('<!--') || stripped.startsWith('{/*') || stripped.startsWith('//')) {
+continue;
+}
+
+    if (lines[i].includes('data-impeccable-variant')) {
+continue;
+}
+
     const openerLine = findOpenerLine(lines, i, tag);
-    if (openerLine === -1) continue;
-    if (seen.has(openerLine)) continue; // multiple matches inside the same element
+
+    if (openerLine === -1) {
+continue;
+}
+
+    if (seen.has(openerLine)) {
+continue;
+} // multiple matches inside the same element
+
     seen.add(openerLine);
     const endLine = findClosingLine(lines, openerLine);
     out.push({ startLine: openerLine, endLine });
   }
+
   return out;
 }
 
@@ -745,12 +941,16 @@ function findAllElements(lines, query, tag = null) {
  */
 function filterByText(candidates, lines, text) {
   const trimmed = text.replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 80);
+
   // Too short to disambiguate. Return [] so the caller's `filtered.length
   // === 0` branch fires (fall back to first-match) — the previous
   // `candidates.slice()` return forced `filtered.length > 1` and surfaced
   // a spurious `element_ambiguous` error on every short-text picker event
   // with multiple candidates.
-  if (trimmed.length < 8) return [];
+  if (trimmed.length < 8) {
+return [];
+}
+
   const targetSpaced = trimmed;
   const targetCompact = trimmed.replace(/\s+/g, '');
 
@@ -762,6 +962,7 @@ function filterByText(candidates, lines, text) {
       .toLowerCase();
     const sourceSpaced = inner.replace(/\s+/g, ' ').trim();
     const sourceCompact = inner.replace(/\s+/g, '');
+
     return sourceSpaced.includes(targetSpaced) || sourceCompact.includes(targetCompact);
   });
 }
@@ -777,18 +978,32 @@ function filterByText(candidates, lines, text) {
  */
 function findOpenerLine(lines, matchLine, tag) {
   const self = lines[matchLine].match(OPENER_RE);
+
   if (self) {
-    if (!tag || self[1] === tag) return matchLine;
+    if (!tag || self[1] === tag) {
+return matchLine;
+}
+
     return -1;
   }
+
   const MAX_BACKWALK = 10;
+
   for (let i = matchLine - 1; i >= Math.max(0, matchLine - MAX_BACKWALK); i--) {
     const opener = lines[i].match(OPENER_RE);
-    if (!opener) continue;
-    if (!tag || opener[1] === tag) return i;
+
+    if (!opener) {
+continue;
+}
+
+    if (!tag || opener[1] === tag) {
+return i;
+}
+
     // Different tag name than requested — abort; we're inside a non-target opener.
     return -1;
   }
+
   return -1;
 }
 
@@ -798,7 +1013,10 @@ function findOpenerLine(lines, matchLine, tag) {
  */
 function findClosingLine(lines, start) {
   const openMatch = lines[start].match(OPENER_RE);
-  if (!openMatch) return start; // caller passed a non-opener; nothing to span
+
+  if (!openMatch) {
+return start;
+} // caller passed a non-opener; nothing to span
 
   const tagName = openMatch[1];
   let depth = 0;
@@ -814,7 +1032,9 @@ function findClosingLine(lines, start) {
 
     depth += opens - selfCloses - closes;
 
-    if (depth <= 0) return i;
+    if (depth <= 0) {
+return i;
+}
   }
 
   // If we can't find the close, return a reasonable guess
@@ -823,6 +1043,7 @@ function findClosingLine(lines, start) {
 
 // Auto-execute when run directly (node live-wrap.mjs ...)
 const _running = process.argv[1];
+
 if (_running?.endsWith('live-wrap.mjs') || _running?.endsWith('live-wrap.mjs/')) {
   wrapCli();
 }

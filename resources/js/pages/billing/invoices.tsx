@@ -1,4 +1,7 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
+import { useState } from 'react';
 import InvoiceController from '@/actions/App/Http/Controllers/Billing/InvoiceController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -16,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState } from 'react';
 
 type LineItem = { description: string; amount: number };
 
@@ -52,13 +54,15 @@ const statusBadge = (status: string) => {
   const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
     draft: { label: 'Draft', variant: 'secondary' },
     finalized: { label: 'Finalized', variant: 'default' },
-    paid: { label: 'Paid', variant: 'outline' },
+    paid: { label: i18n.t('billing.invoices.paid'), variant: 'outline' },
     void: { label: 'Void', variant: 'destructive' },
   };
+
   return map[status] ?? { label: status, variant: 'outline' as const };
 };
 
 export default function Invoices() {
+  const { t } = useTranslation();
   const { invoices, members, plans } = usePage<PageProps>().props;
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { description: '', amount: 0 },
@@ -74,12 +78,12 @@ export default function Invoices() {
 
   return (
     <>
-      <Head title="Invoice Generation" />
+      <Head title={t('billing.invoices.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Invoice Generation"
-          description="Create, finalize, and download invoices. Finalized invoices are immutable."
+          title={t('billing.invoices.title')}
+          description={t('billing.invoices.description')}
         />
 
         <Card>
@@ -125,7 +129,7 @@ export default function Invoices() {
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="grid gap-2">
-                        <Label htmlFor="member_id">Member</Label>
+                        <Label htmlFor="member_id">{t('billing.invoices.member')}</Label>
                         <select
                           id="member_id"
                           name="member_id"
@@ -187,7 +191,7 @@ export default function Invoices() {
                         </div>
                         <div className="grid gap-1">
                           <Label htmlFor={`line_items_${index}_amount`} className={index > 0 ? 'sr-only' : ''}>
-                            Amount
+                            {t('billing.invoices.amount')}
                           </Label>
                           <Input
                             id={`line_items_${index}_amount`}
@@ -256,7 +260,7 @@ export default function Invoices() {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="status">{t('billing.invoices.status')}</Label>
                       <select
                         id="status"
                         name="status"
@@ -275,7 +279,7 @@ export default function Invoices() {
 
                   <div className="flex items-center gap-4 pt-2">
                     <Button disabled={processing}>
-                      {processing ? 'Creating...' : 'Create Invoice'}
+                      {processing ? t('billing.invoices.generate') : t('billing.invoices.generate')}
                     </Button>
                   </div>
                 </>
@@ -294,12 +298,12 @@ export default function Invoices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Member</TableHead>
+                  <TableHead>{t('billing.invoices.invoice')}</TableHead>
+                  <TableHead>{t('billing.invoices.member')}</TableHead>
                   <TableHead>Issued</TableHead>
                   <TableHead>Due</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t('billing.invoices.status')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -307,12 +311,13 @@ export default function Invoices() {
                 {invoices.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
-                      No invoices yet.
+                      {t('billing.invoices.no_invoices')}
                     </TableCell>
                   </TableRow>
                 )}
                 {invoices.map((inv) => {
                   const badge = statusBadge(inv.status);
+
                   return (
                     <TableRow key={inv.id}>
                       <TableCell className="font-mono text-xs font-medium">
@@ -398,7 +403,7 @@ export default function Invoices() {
 
 Invoices.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/invoices' },
-    { title: 'Invoice Generation', href: '/billing/invoices' },
+    { title: i18n.t('billing.billing'), href: '/billing/invoices' },
+    { title: i18n.t('billing.invoices.title'), href: '/billing/invoices' },
   ],
 };

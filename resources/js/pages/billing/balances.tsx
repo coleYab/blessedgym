@@ -1,4 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,12 +34,13 @@ const urgencyConfig: Record<
   string,
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: string }
 > = {
-  Settled: { label: 'Settled', variant: 'outline', icon: '✓' },
-  Overdue_Grace_Period: { label: 'Overdue (Grace)', variant: 'secondary', icon: '⚠' },
+  Settled: { label: i18n.t('billing.balances.paid'), variant: 'outline', icon: '✓' },
+  Overdue_Grace_Period: { label: i18n.t('billing.balances.overdue'), variant: 'secondary', icon: '⚠' },
   Suspended_Non_Payment: { label: 'Suspended', variant: 'destructive', icon: '✕' },
 };
 
 export default function Balances() {
+  const { t } = useTranslation();
   const { ledger, gracePeriodDays } = usePage<PageProps>().props;
 
   const totalOutstanding = ledger.reduce(
@@ -51,12 +54,12 @@ export default function Balances() {
 
   return (
     <>
-      <Head title="Outstanding Balances" />
+      <Head title={t('billing.balances.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Outstanding Balances"
-          description="Real-time debt tracking with auto suspension after the grace period."
+          title={t('billing.balances.title')}
+          description={t('billing.balances.description')}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -111,8 +114,8 @@ export default function Balances() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t('billing.balances.member')}</TableHead>
+                  <TableHead>{t('billing.balances.status')}</TableHead>
                   <TableHead>Invoiced</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Outstanding</TableHead>
@@ -125,12 +128,13 @@ export default function Balances() {
                 {ledger.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
-                      No ledger entries. Create invoices and payments first, then recalculate.
+                      {t('billing.balances.no_balances')}
                     </TableCell>
                   </TableRow>
                 )}
                 {ledger.map((entry) => {
                   const cfg = urgencyConfig[entry.payment_urgency_status] ?? urgencyConfig.Settled;
+
                   return (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
@@ -209,7 +213,7 @@ export default function Balances() {
 
 Balances.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/balances' },
-    { title: 'Outstanding Balances', href: '/billing/balances' },
+    { title: i18n.t('billing.billing'), href: '/billing/balances' },
+    { title: i18n.t('billing.balances.title'), href: '/billing/balances' },
   ],
 };

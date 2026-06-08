@@ -11,6 +11,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,14 +29,14 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
-const revenueItems = [
-  { title: 'Revenue Dashboard', href: '/billing/revenue', icon: AreaChart },
-  { title: 'Expense Tracking', href: '/billing/revenue#expenses', icon: TrendingDown },
-  { title: 'Financial Reports', href: '/billing/revenue#reports', icon: FileText },
-];
-
 export function NavRevenue() {
+  const { t } = useTranslation();
   const { isCurrentUrl } = useCurrentUrl();
+  const revenueItems = [
+    { title: t('nav.revenue.dashboard'), href: '/billing/revenue', icon: AreaChart },
+    { title: t('nav.revenue.expenses'), href: '/billing/revenue#expenses', icon: TrendingDown },
+    { title: t('nav.revenue.reports'), href: '/billing/revenue#reports', icon: FileText },
+  ];
   const [open, setOpen] = useState(
     revenueItems.some((item) => isCurrentUrl(item.href)),
   );
@@ -46,28 +47,30 @@ export function NavRevenue() {
         <SidebarGroupLabel asChild>
           <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2">
             <Landmark className="size-4" />
-            <span className="flex-1 text-left text-xs font-medium">Revenue Management</span>
+            <span className="flex-1 text-left text-xs font-medium">{t('nav.revenue.label')}</span>
             <ChevronDown className="size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem key="Revenue Dashboard">
-                <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      asChild
-                      isActive={isCurrentUrl('/billing/revenue')}
-                    >
-                      <Link href="/billing/revenue" prefetch>
-                        <AreaChart className="size-4" />
-                        <span>Revenue Dashboard</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              </SidebarMenuItem>
+              {revenueItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={isCurrentUrl(item.href)}
+                      >
+                        <Link href={item.href} prefetch>
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </CollapsibleContent>

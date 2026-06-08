@@ -1,4 +1,14 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import i18n from 'i18next';
+import {
+    CalendarDays,
+    CreditCard,
+    Search,
+    Snowflake,
+    Users,
+    XCircle,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -22,14 +32,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-    CalendarDays,
-    CreditCard,
-    Search,
-    Snowflake,
-    Users,
-    XCircle,
-} from 'lucide-react';
 
 type Plan = {
     id: number;
@@ -79,14 +81,16 @@ export default function MembershipStatus({
     search: string | null;
     statusFilter: string | null;
 }) {
+    const { t } = useTranslation();
+
     return (
         <>
             <Head title="Membership Status" />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Membership Status"
-                    description="Search and manage member subscription statuses."
+                    title={t('membership.status.title')}
+                    description={t('membership.status.description')}
                 />
 
                 <Card>
@@ -98,7 +102,7 @@ export default function MembershipStatus({
                         >
                             <div className="flex-1">
                                 <Label htmlFor="search">
-                                    Search Members
+                                    {t('membership.status.search_label')}
                                 </Label>
                                 <div className="relative mt-2">
                                     <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
@@ -106,12 +110,12 @@ export default function MembershipStatus({
                                         id="search"
                                         name="search"
                                         defaultValue={search ?? ''}
-                                        placeholder="Search by name, email, or phone..."
+                                        placeholder={t('membership.status.search_placeholder')}
                                         className="pl-9"
                                     />
                                 </div>
                             </div>
-                            <Button type="submit">Search</Button>
+                            <Button type="submit">{t('membership.status.search_button')}</Button>
                         </Form>
                     </CardContent>
                 </Card>
@@ -142,8 +146,14 @@ export default function MembershipStatus({
                                     }
                                 >
                                     {option === 'all'
-                                        ? 'All'
-                                        : option}
+                                        ? t('membership.status.all')
+                                        : option === 'Active'
+                                            ? t('membership.status.active')
+                                            : option === 'Frozen'
+                                                ? t('membership.status.frozen')
+                                                : option === 'Cancelled'
+                                                    ? t('membership.status.cancelled')
+                                                    : t('membership.status.expired')}
                                 </Badge>
                             </Link>
                         );
@@ -167,7 +177,7 @@ export default function MembershipStatus({
                         <CardContent className="flex flex-col items-center gap-2 py-12">
                             <Users className="text-muted-foreground size-12" />
                             <p className="text-muted-foreground text-sm">
-                                No members match your search.
+                                {t('membership.status.not_found')}
                             </p>
                         </CardContent>
                     </Card>
@@ -184,6 +194,7 @@ function MemberStatusCard({
     member: Member;
     plans: Plan[];
 }) {
+    const { t } = useTranslation();
     const initials = `${member.first_name.charAt(0)}${member.last_name.charAt(0)}`;
 
     return (
@@ -212,29 +223,29 @@ function MemberStatusCard({
 
             <CardContent className="space-y-3 pt-4">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Phone</span>
+                    <span className="text-muted-foreground">{t('membership.status.phone')}</span>
                     <span>{member.phone_number}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                         <CreditCard className="size-3.5" />
-                        Plan
+                        {t('membership.status.plan')}
                     </span>
                     <span>
-                        {member.current_plan?.name ?? 'No plan'}
+                        {member.current_plan?.name ?? t('membership.status.no_plan')}
                     </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                         <CalendarDays className="size-3.5" />
-                        Period
+                        {t('membership.status.period')}
                     </span>
                     <span>
                         {member.start_date && member.end_date
                             ? `${member.start_date} — ${member.end_date}`
-                            : 'Not set'}
+                            : t('membership.status.not_set')}
                     </span>
                 </div>
 
@@ -242,12 +253,12 @@ function MemberStatusCard({
                     <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
                             <Snowflake className="size-3.5" />
-                            Frozen
+                            {t('membership.status.frozen_reason')}
                         </span>
                         <span>
                             {member.freeze_reason}
                             {member.freeze_end_date
-                                ? ` (until ${member.freeze_end_date})`
+                                ? ` ${t('membership.status.until', { date: member.freeze_end_date })}`
                                 : ''}
                         </span>
                     </div>
@@ -257,11 +268,11 @@ function MemberStatusCard({
                     <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
                             <XCircle className="size-3.5" />
-                            Cancelled
+                            {t('membership.status.cancelled_status')}
                         </span>
                         <span>
                             {member.effective_cancellation_date
-                                ? `Effective ${member.effective_cancellation_date}`
+                                ? t('membership.status.effective', { date: member.effective_cancellation_date })
                                 : ''}
                         </span>
                     </div>
@@ -269,10 +280,10 @@ function MemberStatusCard({
 
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                        Currently in facility
+                        {t('membership.status.in_facility')}
                     </span>
                     <span>
-                        {member.active_session ? 'Yes' : 'No'}
+                        {member.active_session ? t('membership.status.yes') : t('membership.status.no')}
                     </span>
                 </div>
             </CardContent>
@@ -305,12 +316,14 @@ function MemberStatusCard({
 }
 
 function FreezeDialog({ member }: { member: Member }) {
+    const { t } = useTranslation();
+
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                     <Snowflake className="mr-1 size-3" />
-                    Freeze
+                    {t('membership.status.freeze')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
@@ -323,11 +336,10 @@ function FreezeDialog({ member }: { member: Member }) {
                         <>
                             <DialogHeader>
                                 <DialogTitle>
-                                    Freeze {member.first_name}{' '}
-                                    {member.last_name}
+                                    {t('membership.status.freeze_title', { name: `${member.first_name} ${member.last_name}` })}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Temporarily pause this membership. End date will be extended automatically on reactivation.
+                                    {t('membership.status.freeze_description')}
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -339,7 +351,7 @@ function FreezeDialog({ member }: { member: Member }) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="freeze_reason">
-                                    Freeze Reason
+                                    {t('membership.status.freeze_reason_label')}
                                 </Label>
                                 <select
                                     id="freeze_reason"
@@ -348,16 +360,16 @@ function FreezeDialog({ member }: { member: Member }) {
                                     required
                                 >
                                     <option value="">
-                                        Select reason...
+                                        {t('membership.status.select_reason')}
                                     </option>
                                     <option value="Medical_Injury">
-                                        Medical / Injury
+                                        {t('membership.status.medical')}
                                     </option>
                                     <option value="Travel">
-                                        Travel
+                                        {t('membership.status.travel')}
                                     </option>
                                     <option value="Personal">
-                                        Personal
+                                        {t('membership.status.personal')}
                                     </option>
                                 </select>
                                 <InputError
@@ -367,7 +379,7 @@ function FreezeDialog({ member }: { member: Member }) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="scheduled_unfreeze_date">
-                                    Scheduled Unfreeze Date
+                                    {t('membership.status.unfreeze_date')}
                                 </Label>
                                 <Input
                                     id="scheduled_unfreeze_date"
@@ -384,7 +396,7 @@ function FreezeDialog({ member }: { member: Member }) {
 
                             <DialogFooter>
                                 <Button disabled={processing}>
-                                    Freeze Membership
+                                    {t('membership.status.freeze_button')}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -396,6 +408,8 @@ function FreezeDialog({ member }: { member: Member }) {
 }
 
 function UnfreezeForm({ memberId }: { memberId: number }) {
+    const { t } = useTranslation();
+
     return (
         <Form
             action={`/billing/freeze/${memberId}/unfreeze`}
@@ -406,13 +420,15 @@ function UnfreezeForm({ memberId }: { memberId: number }) {
                 variant="outline"
                 size="sm"
             >
-                Reactivate (Extend End Date)
+                {t('membership.status.reactivate')}
             </Button>
         </Form>
     );
 }
 
 function CancelDialog({ member }: { member: Member }) {
+    const { t } = useTranslation();
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -422,7 +438,7 @@ function CancelDialog({ member }: { member: Member }) {
                     className="text-rose-600"
                 >
                     <XCircle className="mr-1 size-3" />
-                    Cancel
+                    {t('membership.status.cancel')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
@@ -435,15 +451,10 @@ function CancelDialog({ member }: { member: Member }) {
                         <>
                             <DialogHeader>
                                 <DialogTitle>
-                                    Cancel{' '}
-                                    {member.first_name}{' '}
-                                    {member.last_name}
+                                    {t('membership.status.cancel_title', { name: `${member.first_name} ${member.last_name}` })}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    This will cancel the
-                                    membership. Access will
-                                    remain active until the
-                                    effective cancellation date.
+                                    {t('membership.status.cancel_description')}
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -455,7 +466,7 @@ function CancelDialog({ member }: { member: Member }) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="effective_cancellation_date">
-                                    Effective Cancellation Date
+                                    {t('membership.status.cancel_date')}
                                 </Label>
                                 <Input
                                     id="effective_cancellation_date"
@@ -472,14 +483,14 @@ function CancelDialog({ member }: { member: Member }) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="cancellation_reason">
-                                    Reason for Cancellation
+                                    {t('membership.status.cancel_reason')}
                                 </Label>
                                 <textarea
                                     id="cancellation_reason"
                                     name="cancellation_reason"
                                     rows={3}
                                     className="border-input flex w-full min-w-0 rounded-none border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
-                                    placeholder="Tell us why..."
+                                    placeholder={t('membership.status.cancel_placeholder')}
                                     required
                                 />
                                 <InputError
@@ -494,7 +505,7 @@ function CancelDialog({ member }: { member: Member }) {
                                     disabled={processing}
                                     variant="destructive"
                                 >
-                                    Confirm Cancellation
+                                    {t('membership.status.confirm_cancel')}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -512,11 +523,13 @@ function ModifyDialog({
     member: Member;
     plans: Plan[];
 }) {
+    const { t } = useTranslation();
+
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                    Modify Status
+                    {t('membership.status.modify')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
@@ -529,13 +542,10 @@ function ModifyDialog({
                         <>
                             <DialogHeader>
                                 <DialogTitle>
-                                    Modify{' '}
-                                    {member.first_name}{' '}
-                                    {member.last_name}
+                                    {t('membership.status.modify_title', { name: `${member.first_name} ${member.last_name}` })}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Update membership status,
-                                    plan, or dates.
+                                    {t('membership.status.modify_description')}
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -547,7 +557,7 @@ function ModifyDialog({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="status">
-                                    Status
+                                    {t('membership.status.status')}
                                 </Label>
                                 <select
                                     id="status"
@@ -557,16 +567,16 @@ function ModifyDialog({
                                     required
                                 >
                                     <option value="Active">
-                                        Active
+                                        {t('membership.status.active')}
                                     </option>
                                     <option value="Expired">
-                                        Expired
+                                        {t('membership.status.expired')}
                                     </option>
                                     <option value="Frozen">
-                                        Frozen
+                                        {t('membership.status.frozen')}
                                     </option>
                                     <option value="Cancelled">
-                                        Cancelled
+                                        {t('membership.status.cancelled')}
                                     </option>
                                 </select>
                                 <InputError
@@ -576,7 +586,7 @@ function ModifyDialog({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="current_plan_id">
-                                    Plan
+                                    {t('membership.status.plan')}
                                 </Label>
                                 <select
                                     id="current_plan_id"
@@ -584,7 +594,7 @@ function ModifyDialog({
                                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                 >
                                     <option value="">
-                                        No plan
+                                        {t('membership.status.no_plan')}
                                     </option>
                                     {plans.map((plan) => (
                                         <option
@@ -610,7 +620,7 @@ function ModifyDialog({
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-2">
                                     <Label htmlFor="start_date">
-                                        Start Date
+                                        {t('membership.status.start_date')}
                                     </Label>
                                     <Input
                                         id="start_date"
@@ -629,7 +639,7 @@ function ModifyDialog({
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="end_date">
-                                        End Date
+                                        {t('membership.status.end_date')}
                                     </Label>
                                     <Input
                                         id="end_date"
@@ -647,7 +657,7 @@ function ModifyDialog({
 
                             <DialogFooter>
                                 <Button disabled={processing}>
-                                    Save Changes
+                                    {t('membership.status.save')}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -661,7 +671,7 @@ function ModifyDialog({
 MembershipStatus.layout = {
     breadcrumbs: [
         {
-            title: 'Membership Status',
+            title: i18n.t('membership.status.title'),
             href: '/membership/status',
         },
     ],

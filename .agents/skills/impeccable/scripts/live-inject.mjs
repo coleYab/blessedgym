@@ -57,20 +57,27 @@ Output (JSON):
       console.log(JSON.stringify({ ok: false, error: 'config_missing', path: CONFIG_PATH }));
       process.exit(0);
     }
+
     let cfg;
+
     try {
       cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
     } catch (err) {
       console.log(JSON.stringify({ ok: false, error: 'config_invalid', message: err.message, path: CONFIG_PATH }));
+
       return;
     }
+
     try {
       validateConfig(cfg);
     } catch (err) {
       console.log(JSON.stringify({ ok: false, error: 'config_invalid', message: err.message, path: CONFIG_PATH }));
+
       return;
     }
+
     console.log(JSON.stringify({ ok: true, config: cfg, path: CONFIG_PATH }));
+
     return;
   }
 
@@ -79,6 +86,7 @@ Output (JSON):
     console.error(JSON.stringify({ ok: false, error: 'config_missing', path: CONFIG_PATH }));
     process.exit(1);
   }
+
   const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
   validateConfig(config);
 
@@ -87,12 +95,21 @@ Output (JSON):
   if (args.includes('--remove')) {
     const results = resolvedFiles.map((relFile) => {
       const absFile = path.resolve(process.cwd(), relFile);
-      if (!fs.existsSync(absFile)) return { file: relFile, error: 'file_not_found' };
+
+      if (!fs.existsSync(absFile)) {
+return { file: relFile, error: 'file_not_found' };
+}
+
       const content = fs.readFileSync(absFile, 'utf-8');
       const detagged = removeTag(content, config.commentSyntax);
       const updated = revertCspMeta(detagged);
-      if (updated === content) return { file: relFile, removed: false, note: 'no tag present' };
+
+      if (updated === content) {
+return { file: relFile, removed: false, note: 'no tag present' };
+}
+
       fs.writeFileSync(absFile, updated, 'utf-8');
+
       return {
         file: relFile,
         removed: detagged !== content,
@@ -100,12 +117,14 @@ Output (JSON):
       };
     });
     console.log(JSON.stringify({ ok: true, results }));
+
     return;
   }
 
   // Insert mode — need --port
   const portIdx = args.indexOf('--port');
   const port = portIdx !== -1 ? parseInt(args[portIdx + 1], 10) : NaN;
+
   if (!Number.isFinite(port)) {
     console.error(JSON.stringify({ ok: false, error: 'missing_port' }));
     process.exit(1);
@@ -113,15 +132,22 @@ Output (JSON):
 
   const results = resolvedFiles.map((relFile) => {
     const absFile = path.resolve(process.cwd(), relFile);
-    if (!fs.existsSync(absFile)) return { file: relFile, error: 'file_not_found' };
+
+    if (!fs.existsSync(absFile)) {
+return { file: relFile, error: 'file_not_found' };
+}
+
     const content = fs.readFileSync(absFile, 'utf-8');
     const withoutOld = revertCspMeta(removeTag(content, config.commentSyntax));
     const withTag = insertTag(withoutOld, config, port, relFile);
+
     if (withTag === withoutOld) {
       return { file: relFile, error: 'insertion_point_not_found', anchor: config.insertBefore || config.insertAfter };
     }
+
     const updated = patchCspMeta(withTag, port);
     fs.writeFileSync(absFile, updated, 'utf-8');
+
     return {
       file: relFile,
       inserted: true,
@@ -130,7 +156,10 @@ Output (JSON):
   });
   const anyInserted = results.some((r) => r.inserted);
   console.log(JSON.stringify({ ok: anyInserted, port, results }));
-  if (!anyInserted) process.exit(1);
+
+  if (!anyInserted) {
+process.exit(1);
+}
 }
 
 /**
@@ -151,6 +180,7 @@ export function resolveFiles(rootDir, config) {
 
   const seen = new Set();
   const out = [];
+
   for (const pat of patterns) {
     if (!isGlob(pat)) {
       // Literal path — include even if it doesn't exist yet; the caller
@@ -160,24 +190,39 @@ export function resolveFiles(rootDir, config) {
         seen.add(pat);
         out.push(pat);
       }
+
       continue;
     }
+
     let matches;
+
     try {
       matches = fs.globSync(pat, { cwd: rootDir, withFileTypes: true });
     } catch {
       continue;
     }
+
     for (const ent of matches) {
-      if (!ent.isFile || !ent.isFile()) continue;
+      if (!ent.isFile || !ent.isFile()) {
+continue;
+}
+
       const abs = path.join(ent.parentPath || ent.path || rootDir, ent.name);
       const rel = path.relative(rootDir, abs).split(path.sep).join('/');
-      if (isExcluded(rel)) continue;
-      if (seen.has(rel)) continue;
+
+      if (isExcluded(rel)) {
+continue;
+}
+
+      if (seen.has(rel)) {
+continue;
+}
+
       seen.add(rel);
       out.push(rel);
     }
   }
+
   return out;
 }
 
@@ -191,8 +236,10 @@ export function resolveFiles(rootDir, config) {
 function globToRegex(pattern) {
   let re = '';
   let i = 0;
+
   while (i < pattern.length) {
     const c = pattern[i];
+
     if (c === '*') {
       if (pattern[i + 1] === '*') {
         // ** — any number of segments, including zero. Handle the common
@@ -219,6 +266,7 @@ function globToRegex(pattern) {
       i += 1;
     }
   }
+
   return new RegExp('^' + re + '$');
 }
 
@@ -227,34 +275,47 @@ function globToRegex(pattern) {
 // ---------------------------------------------------------------------------
 
 function validateConfig(cfg) {
-  if (!cfg || typeof cfg !== 'object') throw new Error('config.json must be an object');
+  if (!cfg || typeof cfg !== 'object') {
+throw new Error('config.json must be an object');
+}
+
   if (!Array.isArray(cfg.files) || cfg.files.length === 0) {
     throw new Error('config.files (non-empty string array) required');
   }
+
   if (!cfg.files.every((f) => typeof f === 'string' && f.length > 0)) {
     throw new Error('config.files must contain only non-empty strings');
   }
+
   if (cfg.exclude !== undefined) {
     if (!Array.isArray(cfg.exclude)) {
       throw new Error('config.exclude, if present, must be a string array');
     }
+
     if (!cfg.exclude.every((f) => typeof f === 'string' && f.length > 0)) {
       throw new Error('config.exclude must contain only non-empty strings');
     }
   }
+
   if (typeof cfg.insertBefore !== 'string' && typeof cfg.insertAfter !== 'string') {
     throw new Error('config.insertBefore or config.insertAfter (string) required');
   }
+
   if (cfg.commentSyntax !== 'html' && cfg.commentSyntax !== 'jsx') {
     throw new Error("config.commentSyntax must be 'html' or 'jsx'");
   }
+
   if (cfg.cspChecked !== undefined && typeof cfg.cspChecked !== 'boolean') {
     throw new Error("config.cspChecked, if present, must be a boolean");
   }
 }
 
-function commentOpen(syntax) { return syntax === 'jsx' ? '{/*' : '<!--'; }
-function commentClose(syntax) { return syntax === 'jsx' ? '*/}' : '-->'; }
+function commentOpen(syntax) {
+ return syntax === 'jsx' ? '{/*' : '<!--'; 
+}
+function commentClose(syntax) {
+ return syntax === 'jsx' ? '*/}' : '-->'; 
+}
 
 function buildTagBlock(syntax, port, filePath) {
   const open = commentOpen(syntax);
@@ -263,6 +324,7 @@ function buildTagBlock(syntax, port, filePath) {
   // bundled URL. is:inline opts out so the literal external src survives.
   const isAstro = typeof filePath === 'string' && filePath.endsWith('.astro');
   const scriptAttrs = isAstro ? 'is:inline ' : '';
+
   return (
     open + ' ' + MARKER_OPEN_TEXT + ' ' + close + '\n' +
     '<script ' + scriptAttrs + 'src="http://localhost:' + port + '/live.js"></script>\n' +
@@ -272,21 +334,32 @@ function buildTagBlock(syntax, port, filePath) {
 
 function insertTag(content, config, port, filePath) {
   const block = buildTagBlock(config.commentSyntax, port, filePath);
+
   // insertBefore: match the LAST occurrence. Anchors like `</body>` naturally
   // belong at the end, and the same literal can appear earlier in code blocks
   // within rendered documentation pages.
   if (config.insertBefore) {
     const idx = content.lastIndexOf(config.insertBefore);
-    if (idx === -1) return content;
+
+    if (idx === -1) {
+return content;
+}
+
     return content.slice(0, idx) + block + content.slice(idx);
   }
+
   // insertAfter: match the FIRST occurrence — typical anchors like `<head>` or
   // `<body>` open near the top of the document.
   const idx = content.indexOf(config.insertAfter);
-  if (idx === -1) return content;
+
+  if (idx === -1) {
+return content;
+}
+
   const after = idx + config.insertAfter.length;
   // Preserve a single trailing newline if the anchor didn't end with one
   const prefix = content[after] === '\n' ? content.slice(0, after + 1) : content.slice(0, after) + '\n';
+
   return prefix + block + content.slice(prefix.length);
 }
 
@@ -306,19 +379,31 @@ function removeTag(content, _syntax) {
     /([ \t]*)<!--\s*impeccable-live-start\s*-->[\s\S]*?<!--\s*impeccable-live-end\s*-->([ \t]*(?:\n|$)?)/,
     /([ \t]*)\{\/\*\s*impeccable-live-start\s*\*\/\}[\s\S]*?\{\/\*\s*impeccable-live-end\s*\*\/\}([ \t]*(?:\n|$)?)/,
   ];
+
   for (const pat of patterns) {
     let changed = false;
     let next = content;
+
     do {
       content = next;
       next = content.replace(pat, (_match, leadingIndent, trailing = '') => {
-        if (trailing.includes('\n')) return leadingIndent;
+        if (trailing.includes('\n')) {
+return leadingIndent;
+}
+
         return leadingIndent || trailing || '';
       });
-      if (next !== content) changed = true;
+
+      if (next !== content) {
+changed = true;
+}
     } while (next !== content);
-    if (changed) return next;
+
+    if (changed) {
+return next;
+}
   }
+
   return content;
 }
 
@@ -348,28 +433,41 @@ function findCspMetaTags(content) {
   const out = [];
   const tagRe = /<meta\s+([^>]*?)\/?>/gis;
   let m;
+
   while ((m = tagRe.exec(content)) !== null) {
     const attrs = m[1];
-    if (!/(http-equiv|httpEquiv)\s*=\s*(['"])Content-Security-Policy\2/i.test(attrs)) continue;
+
+    if (!/(http-equiv|httpEquiv)\s*=\s*(['"])Content-Security-Policy\2/i.test(attrs)) {
+continue;
+}
+
     out.push({ start: m.index, end: m.index + m[0].length, full: m[0], attrs });
   }
+
   return out;
 }
 
 function getAttr(attrs, name) {
   const re = new RegExp(`\\b${name}\\s*=\\s*(['"])([\\s\\S]*?)\\1`, 'i');
   const m = attrs.match(re);
+
   return m ? { quote: m[1], value: m[2], full: m[0] } : null;
 }
 
 function appendOriginToDirective(csp, directive, origin) {
   const re = new RegExp(`(^|;)(\\s*)(${directive})\\s+([^;]*)`, 'i');
   const m = csp.match(re);
+
   if (m) {
     const tokens = m[4].trim().split(/\s+/);
-    if (tokens.includes(origin)) return csp;
+
+    if (tokens.includes(origin)) {
+return csp;
+}
+
     return csp.replace(re, `${m[1]}${m[2]}${m[3]} ${[...tokens, origin].join(' ')}`);
   }
+
   // Directive missing — add it. Use 'self' + origin so we don't inadvertently
   // narrow the policy compared to the default-src fallback (most users with
   // an explicit CSP have 'self' there).
@@ -378,17 +476,29 @@ function appendOriginToDirective(csp, directive, origin) {
 
 export function patchCspMeta(content, port) {
   const tags = findCspMetaTags(content);
-  if (tags.length === 0) return content;
+
+  if (tags.length === 0) {
+return content;
+}
+
   const origin = `http://localhost:${port}`;
 
   // Walk last-to-first so prior splices don't invalidate later indices.
   let result = content;
+
   for (let i = tags.length - 1; i >= 0; i--) {
     const tag = tags[i];
     const attrs = tag.attrs;
-    if (getAttr(attrs, CSP_MARKER_ATTR)) continue; // already patched
+
+    if (getAttr(attrs, CSP_MARKER_ATTR)) {
+continue;
+} // already patched
+
     const contentAttr = getAttr(attrs, 'content');
-    if (!contentAttr) continue;
+
+    if (!contentAttr) {
+continue;
+}
 
     const original = contentAttr.value;
     let patched = original;
@@ -398,7 +508,10 @@ export function patchCspMeta(content, port) {
     // URL.createObjectURL, producing a `blob:` URL — img-src 'self' rejects
     // those. Add `blob:` so the overlay doesn't throw a CSP violation.
     patched = appendOriginToDirective(patched, 'img-src', 'blob:');
-    if (patched === original) continue;
+
+    if (patched === original) {
+continue;
+}
 
     const newContentAttr = `content=${contentAttr.quote}${patched}${contentAttr.quote}`;
     const marker = `${CSP_MARKER_ATTR}="${Buffer.from(original, 'utf-8').toString('base64')}"`;
@@ -416,24 +529,40 @@ export function patchCspMeta(content, port) {
 
     result = result.slice(0, tag.start) + newTag + result.slice(tag.end);
   }
+
   return result;
 }
 
 export function revertCspMeta(content) {
   const tags = findCspMetaTags(content);
-  if (tags.length === 0) return content;
+
+  if (tags.length === 0) {
+return content;
+}
 
   let result = content;
+
   for (let i = tags.length - 1; i >= 0; i--) {
     const tag = tags[i];
     const origAttr = getAttr(tag.attrs, CSP_MARKER_ATTR);
-    if (!origAttr) continue;
+
+    if (!origAttr) {
+continue;
+}
+
     const contentAttr = getAttr(tag.attrs, 'content');
-    if (!contentAttr) continue;
+
+    if (!contentAttr) {
+continue;
+}
 
     let originalValue;
-    try { originalValue = Buffer.from(origAttr.value, 'base64').toString('utf-8'); }
-    catch { continue; }
+
+    try {
+ originalValue = Buffer.from(origAttr.value, 'base64').toString('utf-8'); 
+} catch {
+ continue; 
+}
 
     const newContentAttr = `content=${contentAttr.quote}${originalValue}${contentAttr.quote}`;
     let newAttrs = tag.attrs.replace(contentAttr.full, newContentAttr);
@@ -443,6 +572,7 @@ export function revertCspMeta(content) {
 
     result = result.slice(0, tag.start) + newTag + result.slice(tag.end);
   }
+
   return result;
 }
 
@@ -451,6 +581,7 @@ export function revertCspMeta(content) {
 // ---------------------------------------------------------------------------
 
 const _running = process.argv[1];
+
 if (_running?.endsWith('live-inject.mjs') || _running?.endsWith('live-inject.mjs/')) {
   injectCli();
 }

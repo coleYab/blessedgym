@@ -1,4 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
+import i18n from 'i18next';
+import { ImageIcon, Search, UserCheck, UserX, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +22,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ImageIcon, Search, UserCheck, UserX, Users } from 'lucide-react';
 
 type Member = {
     id: number;
@@ -45,14 +47,16 @@ export default function MemberCheckin({
     members: Member[];
     search: string | null;
 }) {
+    const { t } = useTranslation();
+
     return (
         <>
             <Head title="Member Check-in" />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Member Check-in"
-                    description="Search for a member to record their entry or exit."
+                    title={t('membership.checkin.title')}
+                    description={t('membership.checkin.description')}
                 />
 
                 <Card>
@@ -64,7 +68,7 @@ export default function MemberCheckin({
                         >
                             <div className="flex-1">
                                 <Label htmlFor="search">
-                                    Search Members
+                                    {t('membership.checkin.search_label')}
                                 </Label>
                                 <div className="relative mt-2">
                                     <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
@@ -72,12 +76,12 @@ export default function MemberCheckin({
                                         id="search"
                                         name="search"
                                         defaultValue={search ?? ''}
-                                        placeholder="Search by name, email, or phone..."
+                                        placeholder={t('membership.checkin.search_placeholder')}
                                         className="pl-9"
                                     />
                                 </div>
                             </div>
-                            <Button type="submit">Search</Button>
+                            <Button type="submit">{t('membership.checkin.search_button')}</Button>
                         </Form>
                     </CardContent>
                 </Card>
@@ -85,8 +89,8 @@ export default function MemberCheckin({
                 {search && (
                     <p className="text-sm text-muted-foreground">
                         {members.length > 0
-                            ? `${members.length} member${members.length !== 1 ? 's' : ''} found for "${search}"`
-                            : `No members found for "${search}"`}
+                            ? `${members.length} ${members.length === 1 ? t('membership.checkin.found') : t('membership.checkin.found_plural')} for "${search}"`
+                            : t('membership.checkin.not_found_for', { search })}
                     </p>
                 )}
 
@@ -106,10 +110,10 @@ export default function MemberCheckin({
                         <CardContent className="flex flex-col items-center gap-2 py-12">
                             <Users className="text-muted-foreground size-12" />
                             <p className="text-muted-foreground text-sm">
-                                No members match your search.
+                                {t('membership.checkin.not_found')}
                             </p>
                             <p className="text-muted-foreground text-xs">
-                                Try a different name, email, or phone number.
+                                {t('membership.checkin.try_different')}
                             </p>
                         </CardContent>
                     </Card>
@@ -120,6 +124,7 @@ export default function MemberCheckin({
 }
 
 function MemberCard({ member }: { member: Member }) {
+    const { t } = useTranslation();
     const initials = `${member.first_name.charAt(0)}${member.last_name.charAt(0)}`;
 
     return (
@@ -139,12 +144,12 @@ function MemberCard({ member }: { member: Member }) {
                 {member.current_session_id ? (
                     <Badge variant="default" className="shrink-0 bg-emerald-600 hover:bg-emerald-600">
                         <UserCheck className="mr-1 size-3" />
-                        In
+                        {t('membership.checkin.in')}
                     </Badge>
                 ) : (
                     <Badge variant="secondary" className="shrink-0">
                         <UserX className="mr-1 size-3" />
-                        Out
+                        {t('membership.checkin.out')}
                     </Badge>
                 )}
             </CardHeader>
@@ -159,7 +164,7 @@ function MemberCard({ member }: { member: Member }) {
                                 className="w-full"
                             >
                                 <ImageIcon className="mr-1 size-3" />
-                                Show Photo
+                                {t('membership.checkin.show_photo')}
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
@@ -172,7 +177,7 @@ function MemberCard({ member }: { member: Member }) {
                                 {member.profile_photo_url ? (
                                     <div>
                                         <p className="mb-2 text-xs font-medium text-muted-foreground">
-                                            Profile Photo
+                                            {t('membership.checkin.profile_photo')}
                                         </p>
                                         <img
                                             src={member.profile_photo_url}
@@ -184,7 +189,7 @@ function MemberCard({ member }: { member: Member }) {
                                 {member.id_document_url ? (
                                     <div>
                                         <p className="mb-2 text-xs font-medium text-muted-foreground">
-                                            ID Document
+                                            {t('membership.checkin.id_document')}
                                         </p>
                                         <img
                                             src={member.id_document_url}
@@ -203,20 +208,20 @@ function MemberCard({ member }: { member: Member }) {
 
             <CardContent className="space-y-3 pt-4">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Status</span>
-                    <span>{member.status ?? '—'}</span>
+                    <span className="text-muted-foreground">{t('membership.checkin.status')}</span>
+                    <span>{member.status ?? t('membership.checkin.no_plan')}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Plan</span>
-                    <span>{member.plan_name ?? '—'}</span>
+                    <span className="text-muted-foreground">{t('membership.checkin.plan')}</span>
+                    <span>{member.plan_name ?? t('membership.checkin.no_plan')}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Phone</span>
+                    <span className="text-muted-foreground">{t('membership.checkin.phone')}</span>
                     <span>{member.phone_number}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                        Today's Sessions
+                        {t('membership.checkin.today_sessions')}
                     </span>
                     <span>{member.today_sessions_count} / 2</span>
                 </div>
@@ -239,7 +244,7 @@ function MemberCard({ member }: { member: Member }) {
                             className="w-full"
                             size="sm"
                         >
-                            Check In
+                            {t('membership.checkin.check_in')}
                         </Button>
                     </Form>
                 )}
@@ -261,7 +266,7 @@ function MemberCard({ member }: { member: Member }) {
                             className="w-full"
                             size="sm"
                         >
-                            Check Out
+                            {t('membership.checkin.check_out')}
                         </Button>
                     </Form>
                 )}
@@ -279,7 +284,7 @@ function MemberCard({ member }: { member: Member }) {
 MemberCheckin.layout = {
     breadcrumbs: [
         {
-            title: 'Member Check-in',
+            title: i18n.t('membership.checkin.title'),
             href: '/membership/checkin',
         },
     ],

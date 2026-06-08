@@ -1,12 +1,13 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import { Search, UserPlus, Users } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -23,8 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, UserPlus, Users } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Role = {
   id: number;
@@ -52,16 +54,17 @@ type PageProps = {
 };
 
 export default function StaffProfiles() {
+  const { t } = useTranslation();
   const { staff, roles, filters } = usePage<PageProps>().props;
 
   return (
     <>
-      <Head title="Staff Profiles & Roles" />
+      <Head title={t('employee.staff.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Staff Profiles & Roles"
-          description="Manage staff, assign roles (Trainer, Receptionist, Manager), and view profiles."
+          title={t('employee.staff.title')}
+          description={t('employee.staff.description')}
         />
 
         <div className="flex items-center gap-2">
@@ -71,35 +74,35 @@ export default function StaffProfiles() {
             className="flex flex-1 items-end gap-3"
           >
             <div className="flex-1">
-              <Label htmlFor="search">Search Staff</Label>
+              <Label htmlFor="search">{t('employee.staff.search')}</Label>
               <div className="relative mt-2">
                 <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                 <Input
                   id="search"
                   name="search"
                   defaultValue={filters.search ?? ''}
-                  placeholder="Search by name or email..."
+                  placeholder={t('employee.staff.search_placeholder')}
                   className="pl-9"
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('employee.staff.role')}</Label>
               <select
                 id="role"
                 name="role"
                 className="border-input mt-2 flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                 defaultValue={filters.role ?? ''}
               >
-                <option value="">All roles</option>
+                <option value="">{t('employee.staff.all_roles')}</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
             </div>
-            <Button type="submit">Search</Button>
+            <Button type="submit">{t('employee.staff.search_btn')}</Button>
             <Link href="/employee/staff">
-              <Button type="button" variant="outline">Clear</Button>
+              <Button type="button" variant="outline">{t('employee.staff.clear')}</Button>
             </Link>
           </Form>
 
@@ -109,9 +112,9 @@ export default function StaffProfiles() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Staff
+              {t('employee.staff.staff')}
               <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({staff.length} {staff.length === 1 ? 'member' : 'members'})
+                ({staff.length} {t(staff.length === 1 ? 'employee.staff.member' : 'employee.staff.members')})
               </span>
             </CardTitle>
           </CardHeader>
@@ -119,13 +122,13 @@ export default function StaffProfiles() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Staff</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Hired</TableHead>
-                  <TableHead>Specialties</TableHead>
-                  <TableHead>Rate</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('employee.staff.staff')}</TableHead>
+                  <TableHead>{t('employee.staff.role')}</TableHead>
+                  <TableHead>{t('employee.staff.status')}</TableHead>
+                  <TableHead>{t('employee.staff.hired')}</TableHead>
+                  <TableHead>{t('employee.staff.specialties')}</TableHead>
+                  <TableHead>{t('employee.staff.rate')}</TableHead>
+                  <TableHead className="text-right">{t('employee.staff.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,7 +137,8 @@ export default function StaffProfiles() {
                     <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                       <div className="flex flex-col items-center gap-2 py-6">
                         <Users className="size-8 text-muted-foreground/50" />
-                        <p>No staff profiles yet. Promote a user to staff to get started.</p>
+                        <p>{t('employee.staff.no_staff')}</p>
+                        <p className="text-xs">{t('employee.staff.add_first')}</p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -210,12 +214,14 @@ export default function StaffProfiles() {
                         method="post"
                         className="inline"
                         onSubmit={(e) => {
-                          if (!confirm('Remove this staff profile?')) e.preventDefault();
+                          if (!confirm(t('employee.staff.confirm_remove'))) {
+e.preventDefault();
+}
                         }}
                       >
                         <input type="hidden" name="_method" value="delete" />
                         <Button type="submit" variant="ghost" size="sm">
-                          Remove
+                          {t('employee.staff.remove')}
                         </Button>
                       </form>
                     </TableCell>
@@ -231,6 +237,7 @@ export default function StaffProfiles() {
 }
 
 function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ id: number; name: string; email: string }[]>([]);
@@ -247,6 +254,7 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -256,11 +264,19 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
     setSelectedUserId(null);
     setSelectedUserName('');
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.length < 2) { setSearchResults([]); setShowResults(false); return; }
+    if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+}
+
+    if (q.length < 2) {
+ setSearchResults([]); setShowResults(false);
+
+ return; 
+}
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
+
       try {
         const res = await fetch(`/employee/staff/search-users?q=${encodeURIComponent(q)}`);
         const data = await res.json();
@@ -279,7 +295,7 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-1 size-4" />
-          Promote to Staff
+          {t('employee.staff.promote')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -294,20 +310,20 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
           {({ processing, errors, setData }) => (
             <>
               <DialogHeader>
-                <DialogTitle>Promote to Staff</DialogTitle>
+                <DialogTitle>{t('employee.staff.promote_title')}</DialogTitle>
                 <DialogDescription>
-                  Search for an existing user and assign them a staff role.
+                  {t('employee.staff.promote_desc')}
                 </DialogDescription>
               </DialogHeader>
 
               <input type="hidden" name="user_id" value={selectedUserId ?? ''} />
 
               <div className="grid gap-2" ref={searchRef}>
-                <Label htmlFor="user_search">Search User</Label>
+                <Label htmlFor="user_search">{t('employee.staff.search_user')}</Label>
                 <div className="relative">
                   <Input
                     id="user_search"
-                    placeholder="Type name or email (min 2 chars)..."
+                    placeholder={t('employee.staff.search_user_placeholder')}
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                   />
@@ -341,11 +357,11 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
                   </div>
                 )}
                 {showResults && searchResults.length === 0 && searchQuery.length >= 2 && (
-                  <p className="text-xs text-muted-foreground">No users found.</p>
+                  <p className="text-xs text-muted-foreground">{t('employee.staff.no_users_found')}</p>
                 )}
                 {selectedUserId && (
                   <p className="text-xs font-medium text-emerald-600">
-                    Selected: {selectedUserName}
+                    {t('employee.staff.selected')}: {selectedUserName}
                   </p>
                 )}
                 <InputError message={errors.user_id} />
@@ -355,14 +371,14 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="role_id">Role</Label>
+                  <Label htmlFor="role_id">{t('employee.staff.role')}</Label>
                   <select
                     id="role_id"
                     name="role_id"
                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                     required
                   >
-                    <option value="">Select role...</option>
+                    <option value="">{t('employee.staff.select_role')}</option>
                     {roles.map((r) => (
                       <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
@@ -371,16 +387,16 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="employment_status">Status</Label>
+                  <Label htmlFor="employment_status">{t('employee.staff.status')}</Label>
                   <select
                     id="employment_status"
                     name="employment_status"
                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                     required
                   >
-                    <option value="Active">Active</option>
-                    <option value="Suspended">Suspended</option>
-                    <option value="Terminated">Terminated</option>
+                    <option value="Active">{t('employee.staff.active')}</option>
+                    <option value="Suspended">{t('employee.staff.suspended')}</option>
+                    <option value="Terminated">{t('employee.staff.terminated')}</option>
                   </select>
                   <InputError message={errors.employment_status} />
                 </div>
@@ -388,13 +404,13 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="hired_date">Hired Date</Label>
+                  <Label htmlFor="hired_date">{t('employee.staff.hired')}</Label>
                   <Input id="hired_date" name="hired_date" type="date" required />
                   <InputError message={errors.hired_date} />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="currency">Currency</Label>
+                  <Label htmlFor="currency">{t('employee.staff.currency')}</Label>
                   <select
                     id="currency"
                     name="currency"
@@ -411,25 +427,25 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="base_hourly_rate">Base Hourly Rate</Label>
+                  <Label htmlFor="base_hourly_rate">{t('employee.staff.base_rate')}</Label>
                   <Input id="base_hourly_rate" name="base_hourly_rate" type="number" step="0.01" min="0" />
                   <InputError message={errors.base_hourly_rate} />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="profile_photo">Profile Photo</Label>
+                  <Label htmlFor="profile_photo">{t('employee.staff.profile_photo')}</Label>
                   <Input id="profile_photo" name="profile_photo" type="file" accept="image/*" />
                   <InputError message={errors.profile_photo} />
                 </div>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="specialties">Specialties (one per line, for trainers)</Label>
+                <Label htmlFor="specialties">{t('employee.staff.specialties_label')}</Label>
                 <textarea
                   id="specialties"
                   name="specialties"
                   rows={2}
-                  placeholder="Powerlifting&#10;HIIT&#10;Nutrition Coaching"
+                  placeholder={t('employee.staff.specialties_placeholder')}
                   className="border-input flex w-full min-w-0 rounded-none border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                   onChange={(e) => {
                     const lines = e.target.value
@@ -444,10 +460,10 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t('employee.staff.cancel')}
                 </Button>
                 <Button disabled={processing || !selectedUserId}>
-                  {processing ? 'Creating...' : 'Create Staff Profile'}
+                  {processing ? t('employee.staff.creating') : t('employee.staff.create_profile')}
                 </Button>
               </div>
             </>
@@ -460,7 +476,7 @@ function PromoteToStaffDialog({ roles }: { roles: Role[] }) {
 
 StaffProfiles.layout = {
   breadcrumbs: [
-    { title: 'Employee Management', href: '/employee/staff' },
-    { title: 'Staff Profiles & Roles', href: '/employee/staff' },
+    { title: i18n.t('employee.staff.breadcrumb_management'), href: '/employee/staff' },
+    { title: i18n.t('employee.staff.title'), href: '/employee/staff' },
   ],
 };

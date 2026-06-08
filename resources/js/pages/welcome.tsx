@@ -1,71 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
-
-const tiers = [
-    {
-        name: 'Basic',
-        price: '2,500',
-        period: '/ month',
-        highlight: false,
-        features: [
-            'Access to gym floor & cardio deck',
-            'Locker room & shower access',
-            'Open workspace lounge access',
-            '1 Free coaching session',
-        ],
-        cta: 'Get Started',
-    },
-    {
-        name: 'The Athlete',
-        price: '4,500',
-        period: '/ month',
-        highlight: true,
-        features: [
-            '24/7 Gym & workspace access',
-            'Unlimited 1-on-1 coaching',
-            'Sauna & recovery zone',
-            '1 Monthly body composition scan',
-            'Dedicated desk booking',
-        ],
-        cta: 'Join The Team',
-    },
-    {
-        name: 'VIP Elite',
-        price: '8,000',
-        period: '/ month',
-        highlight: false,
-        features: [
-            'Everything in Athlete',
-            'Weekly 1-on-1 coaching',
-            'Custom nutrition & program design',
-            'Private office space',
-            'Complimentary juice bar daily',
-            'Priority class booking',
-        ],
-        cta: 'Go Elite',
-    },
-];
-
-const faqs = [
-    {
-        q: 'Can I cancel my membership at any time?',
-        a: 'Yes, we offer contract-free month-to-month options.',
-    },
-    {
-        q: 'Is there parking available?',
-        a: 'Yes, we have a massive, free dedicated parking lot for members.',
-    },
-    {
-        q: 'Do you have beginner-friendly programs?',
-        a: 'Absolutely. Every new member gets a complimentary orientation and baseline assessment.',
-    },
-    {
-        q: 'Can I use the workspace without a gym session?',
-        a: 'Yes. Our Athlete and VIP Elite plans include full coworking access — gym is optional.',
-    },
-];
 
 function FaqItem({ q, a }: { q: string; a: string }) {
     const [open, setOpen] = useState(false);
@@ -130,6 +67,71 @@ observer.observe(ref.current);
 
 export default function Welcome() {
     const { auth } = usePage().props;
+    const { t } = useTranslation();
+
+    const tiers = [
+        {
+            name: t('welcome.pricing.basic'),
+            price: '2,500',
+            period: '/ month',
+            highlight: false,
+            features: [
+                t('welcome.pricing.features.basic_1'),
+                t('welcome.pricing.features.basic_2'),
+                t('welcome.pricing.features.basic_3'),
+                t('welcome.pricing.features.basic_4'),
+            ],
+            cta: t('welcome.pricing.get_started'),
+        },
+        {
+            name: t('welcome.pricing.athlete'),
+            price: '4,500',
+            period: '/ month',
+            highlight: true,
+            features: [
+                t('welcome.pricing.features.athlete_1'),
+                t('welcome.pricing.features.athlete_2'),
+                t('welcome.pricing.features.athlete_3'),
+                t('welcome.pricing.features.athlete_4'),
+                t('welcome.pricing.features.athlete_5'),
+            ],
+            cta: t('welcome.pricing.join_team'),
+        },
+        {
+            name: t('welcome.pricing.vip'),
+            price: '8,000',
+            period: '/ month',
+            highlight: false,
+            features: [
+                t('welcome.pricing.features.vip_1'),
+                t('welcome.pricing.features.vip_2'),
+                t('welcome.pricing.features.vip_3'),
+                t('welcome.pricing.features.vip_4'),
+                t('welcome.pricing.features.vip_5'),
+                t('welcome.pricing.features.vip_6'),
+            ],
+            cta: t('welcome.pricing.go_elite'),
+        },
+    ];
+
+    const faqs = [
+        {
+            q: t('welcome.faq.q1'),
+            a: t('welcome.faq.a1'),
+        },
+        {
+            q: t('welcome.faq.q2'),
+            a: t('welcome.faq.a2'),
+        },
+        {
+            q: t('welcome.faq.q3'),
+            a: t('welcome.faq.a3'),
+        },
+        {
+            q: t('welcome.faq.q4'),
+            a: t('welcome.faq.a4'),
+        },
+    ];
 
     return (
         <>
@@ -167,7 +169,7 @@ export default function Welcome() {
                                     href={dashboard()}
                                     className="inline-block rounded-none border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a]"
                                 >
-                                    Dashboard
+                                    {t('welcome.nav.dashboard')}
                                 </Link>
                             ) : (
                                 <>
@@ -175,13 +177,13 @@ export default function Welcome() {
                                         href={login()}
                                         className="inline-block rounded-none border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035]"
                                     >
-                                        Log in
+                                        {t('welcome.nav.login')}
                                     </Link>
                                     <Link
                                         href={register()}
                                         className="inline-block rounded-none border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a]"
                                     >
-                                        Register
+                                        {t('welcome.nav.register')}
                                     </Link>
                                 </>
                             )}
@@ -196,32 +198,31 @@ export default function Welcome() {
                     <div className="relative mx-auto max-w-7xl px-6 py-20">
                         <div className="max-w-3xl">
                             <h1 className="text-balance text-5xl font-black uppercase leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
-                                No Excuses.
+                                {t('welcome.hero.title1')}
                                 <br />
-                                Just Results.
+                                {t('welcome.hero.title2')}
                             </h1>
                             <p className="mt-6 max-w-xl text-lg text-white/80 sm:text-xl">
-                                Premium equipment, expert coaching, and a community built to push you
-                                forward. Claim your free 3-day pass today.
+                                {t('welcome.hero.subtitle')}
                             </p>
                             <div className="mt-8 flex flex-wrap gap-4">
                                 <Link
                                     href={register()}
                                     className="group relative inline-block rounded-none border-2 border-[#39FF14] bg-[#39FF14] px-8 py-3 text-sm font-bold uppercase tracking-wider text-black shadow-[4px_4px_0px_0px_#1a1a2e] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#1a1a2e]"
                                 >
-                                    <span className="relative z-10">Claim Your Free Pass</span>
+                                    <span className="relative z-10">{t('welcome.hero.cta')}</span>
                                 </Link>
                                 <a
                                     href="#offerings"
                                     className="inline-block rounded-none border-2 border-white/40 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:border-white"
                                 >
-                                    Explore More
+                                    {t('welcome.hero.explore')}
                                 </a>
                             </div>
                             <div className="mt-8 flex items-center gap-2 text-sm text-white/70">
-                                <span className="text-yellow-400">⭐ 4.9/5 stars</span>
+                                <span className="text-yellow-400">{t('welcome.hero.rating')}</span>
                                 <span className="text-white/40">|</span>
-                                <span>from over 500+ local members</span>
+                                <span>{t('welcome.hero.from')}</span>
                             </div>
                         </div>
                     </div>
@@ -230,15 +231,15 @@ export default function Welcome() {
                 {/* ── 2. Social Proof / Trust Bar ── */}
                 <section className="border-b border-border bg-card">
                     <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-12 gap-y-4 px-6 py-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        <span>15,000 sq. ft. Facility</span>
+                        <span>{t('welcome.trust.facility')}</span>
                         <span className="hidden text-muted-foreground/30 sm:inline">|</span>
-                        <span>24/7 Workspace Access</span>
+                        <span>{t('welcome.trust.access')}</span>
                         <span className="hidden text-muted-foreground/30 sm:inline">|</span>
-                        <span>1-on-1 Expert Coaching</span>
+                        <span>{t('welcome.trust.coaching')}</span>
                         <span className="hidden text-muted-foreground/30 sm:inline">|</span>
-                        <span>NASM Certified</span>
+                        <span>{t('welcome.trust.certified')}</span>
                         <span className="hidden text-muted-foreground/30 sm:inline">|</span>
-                        <span>Premium Coworking</span>
+                        <span>{t('welcome.trust.coworking')}</span>
                     </div>
                 </section>
 
@@ -246,32 +247,31 @@ export default function Welcome() {
                 <section id="offerings" className="border-b border-border px-6 py-20">
                     <div className="mx-auto max-w-7xl">
                         <h2 className="text-balance text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                            What We Offer
+                            {t('welcome.offerings.title')}
                         </h2>
                         <p className="mt-3 max-w-xl text-muted-foreground">
-                            A space built for your body and your work. Train, focus, recover — all
-                            under one roof.
+                            {t('welcome.offerings.subtitle')}
                         </p>
                         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                             {[
                                 {
-                                    title: 'Elite Equipment',
-                                    desc: 'Top-tier strength, cardio, and functional training gear. No waiting in lines.',
+                                    title: t('welcome.offerings.elite_equipment'),
+                                    desc: t('welcome.offerings.elite_equipment_desc'),
                                     icon: '🏋️',
                                 },
                                 {
-                                    title: 'Expert Coaching',
-                                    desc: 'Certified personal trainers dedicated to tracking your form and progress.',
+                                    title: t('welcome.offerings.expert_coaching'),
+                                    desc: t('welcome.offerings.expert_coaching_desc'),
                                     icon: '🎯',
                                 },
                                 {
-                                    title: 'Workspace & Lounge',
-                                    desc: 'High-speed WiFi, quiet desks, meeting rooms, and a lounge to recharge.',
+                                    title: t('welcome.offerings.workspace'),
+                                    desc: t('welcome.offerings.workspace_desc'),
                                     icon: '💻',
                                 },
                                 {
-                                    title: 'Premium Amenities',
-                                    desc: 'Locker rooms, saunas, cold plunge, and a fully stocked juice bar.',
+                                    title: t('welcome.offerings.amenities'),
+                                    desc: t('welcome.offerings.amenities_desc'),
                                     icon: '♨️',
                                 },
                             ].map((item) => (
@@ -298,17 +298,17 @@ export default function Welcome() {
                 <section className="border-b border-border px-6 py-20">
                     <div className="mx-auto max-w-7xl">
                         <h2 className="text-balance text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                            Inside the Facility
+                            {t('welcome.facility.title')}
                         </h2>
                         <p className="mt-3 max-w-xl text-muted-foreground">
-                            See where you will be sweating, working, and recovering.
+                            {t('welcome.facility.subtitle')}
                         </p>
                         <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
                             {[
-                                { label: 'Heavy Lifting Zone', cols: 'col-span-2 row-span-2' },
-                                { label: 'Cardio & Turf' },
-                                { label: 'Coworking Lounge' },
-                                { label: 'Sauna & Recovery' },
+                                { label: t('welcome.facility.heavy_lifting'), cols: 'col-span-2 row-span-2' },
+                                { label: t('welcome.facility.cardio') },
+                                { label: t('welcome.facility.coworking') },
+                                { label: t('welcome.facility.sauna') },
                             ].map((img, i) => (
                                 <div
                                     key={i}
@@ -328,10 +328,10 @@ export default function Welcome() {
                 <section className="border-b border-border px-6 py-20">
                     <div className="mx-auto max-w-7xl">
                         <h2 className="text-balance text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                            Choose Your Plan
+                            {t('welcome.pricing.title')}
                         </h2>
                         <p className="mt-3 max-w-xl text-muted-foreground">
-                            Clear, transparent pricing. No hidden fees. All prices in ETB.
+                            {t('welcome.pricing.subtitle')}
                         </p>
                         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
                             {tiers.map((tier) => (
@@ -345,7 +345,7 @@ export default function Welcome() {
                                 >
                                     {tier.highlight && (
                                         <span className="absolute -top-3 left-4 rounded-none bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground">
-                                            Most Popular
+                                            {t('welcome.pricing.most_popular')}
                                         </span>
                                     )}
                                     <h3 className="text-lg font-bold text-card-foreground">
@@ -393,10 +393,10 @@ export default function Welcome() {
                 <section className="border-b border-border px-6 py-20">
                     <div className="mx-auto max-w-7xl">
                         <h2 className="text-balance text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                            Real Results
+                            {t('welcome.results.title')}
                         </h2>
                         <p className="mt-3 max-w-xl text-muted-foreground">
-                            Transformation stories from our Ethiopian community.
+                            {t('welcome.results.subtitle')}
                         </p>
                         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
                             <div className="flex flex-col border border-border bg-card p-6 shadow-[4px_4px_0px_0px_hsl(0_0%_0%)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_hsl(0_0%_0%)]">
@@ -412,13 +412,11 @@ export default function Welcome() {
                                     </div>
                                 </div>
                                 <p className="mt-4 text-sm leading-relaxed text-card-foreground italic">
-                                    &ldquo;I used to think I had to choose between my fitness and my
-                                    work. Here I get both. The workspace keeps me productive, and
-                                    the coaches keep me accountable.&rdquo;
+                                    {t('welcome.results.testimonial_1')}
                                 </p>
                                 <div className="mt-4 flex items-center gap-2 text-sm">
                                     <span className="font-bold text-secondary">↓ 12 kg</span>
-                                    <span className="text-muted-foreground">lost in 4 months</span>
+                                    <span className="text-muted-foreground">{t('welcome.results.lost')}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col border border-border bg-card p-6 shadow-[4px_4px_0px_0px_hsl(0_0%_0%)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_hsl(0_0%_0%)]">
@@ -434,14 +432,12 @@ export default function Welcome() {
                                     </div>
                                 </div>
                                 <p className="mt-4 text-sm leading-relaxed text-card-foreground italic">
-                                    &ldquo;The 1-on-1 coaching completely changed my form. I went
-                                    from chronic back pain to deadlifting my bodyweight in 6
-                                    months. Unreal community.&rdquo;
+                                    {t('welcome.results.testimonial_2')}
                                 </p>
                                 <div className="mt-4 flex items-center gap-2 text-sm">
                                     <span className="font-bold text-secondary">+25 kg</span>
                                     <span className="text-muted-foreground">
-                                        on squat in 3 months
+                                        {t('welcome.results.squat')}
                                     </span>
                                 </div>
                             </div>
@@ -458,14 +454,12 @@ export default function Welcome() {
                                     </div>
                                 </div>
                                 <p className="mt-4 text-sm leading-relaxed text-card-foreground italic">
-                                    &ldquo;The VIP Elite plan is worth every birr. Weekly coaching
-                                    + the private office space means I get my work done and still
-                                    hit my fitness goals. No excuses.&rdquo;
+                                    {t('welcome.results.testimonial_3')}
                                 </p>
                                 <div className="mt-4 flex items-center gap-2 text-sm">
                                     <span className="font-bold text-secondary">↓ 18 kg</span>
                                     <span className="text-muted-foreground">
-                                        lost · 3 dress sizes down
+                                        {t('welcome.results.dress_sizes')}
                                     </span>
                                 </div>
                             </div>
@@ -475,7 +469,7 @@ export default function Welcome() {
                                 <span className="block text-3xl font-black text-card-foreground">
                                     <CountUp end={500} suffix="+" />
                                 </span>
-                                <span className="text-xs text-muted-foreground">Active Members</span>
+                                <span className="text-xs text-muted-foreground">{t('welcome.results.active_members')}</span>
                             </div>
                             <div className="h-10 w-px bg-border" />
                             <div className="text-center">
@@ -483,7 +477,7 @@ export default function Welcome() {
                                     <CountUp end={50} suffix="+" />
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    Weekly Sessions
+                                    {t('welcome.results.weekly_sessions')}
                                 </span>
                             </div>
                             <div className="h-10 w-px bg-border" />
@@ -492,7 +486,7 @@ export default function Welcome() {
                                     <CountUp end={4.9} />
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    Star Rating
+                                    {t('welcome.results.star_rating')}
                                 </span>
                             </div>
                             <div className="h-10 w-px bg-border" />
@@ -500,7 +494,7 @@ export default function Welcome() {
                                 <span className="block text-3xl font-black text-card-foreground">
                                     <CountUp end={15} suffix="+" />
                                 </span>
-                                <span className="text-xs text-muted-foreground">Years Running</span>
+                                <span className="text-xs text-muted-foreground">{t('welcome.results.years_running')}</span>
                             </div>
                         </div>
                     </div>
@@ -512,10 +506,10 @@ export default function Welcome() {
                         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
                             <div>
                                 <h2 className="text-balance text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                                    FAQs
+                                    {t('welcome.faq.title')}
                                 </h2>
                                 <p className="mt-3 max-w-xl text-muted-foreground">
-                                    Everything you need to know before stepping in.
+                                    {t('welcome.faq.subtitle')}
                                 </p>
                                 <div className="mt-8 flex flex-col gap-3">
                                     {faqs.map((faq) => (
@@ -525,22 +519,22 @@ export default function Welcome() {
                             </div>
                             <div className="flex flex-col justify-center border border-border bg-card p-8 shadow-[4px_4px_0px_0px_hsl(0_0%_0%)]">
                                 <h3 className="text-balance text-2xl font-black uppercase tracking-tight text-card-foreground sm:text-3xl">
-                                    Ready to write your success story?
+                                    {t('welcome.cta.title')}
                                 </h3>
                                 <p className="mt-3 text-sm text-muted-foreground">
-                                    No commitment. Just show up and see what&apos;s possible.
+                                    {t('welcome.cta.subtitle')}
                                 </p>
                                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                                     <input
                                         type="email"
-                                        placeholder="Enter your email address"
+                                        placeholder={t('welcome.cta.placeholder')}
                                         className="min-w-0 flex-1 rounded-none border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                                     />
                                     <Link
                                         href={register()}
                                         className="inline-block shrink-0 rounded-none border-2 border-primary bg-primary px-6 py-3 text-center text-sm font-bold uppercase tracking-wider text-primary-foreground shadow-[4px_4px_0px_0px_var(--primary)] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--primary)]"
                                     >
-                                        Get Started Now
+                                        {t('welcome.cta.button')}
                                     </Link>
                                 </div>
                             </div>
@@ -554,7 +548,7 @@ export default function Welcome() {
                         <span className="font-black uppercase tracking-tight text-foreground">
                             Blessed Gym
                         </span>
-                        <p>&copy; {new Date().getFullYear()} Blessed Gym. All rights reserved.</p>
+                        <p>&copy; {new Date().getFullYear()} Blessed Gym. {t('welcome.footer.copyright')}</p>
                     </div>
                 </footer>
             </div>

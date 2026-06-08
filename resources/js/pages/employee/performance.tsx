@@ -1,5 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import {
     Area,
     AreaChart,
@@ -107,6 +109,7 @@ const PERIODS = [
 ];
 
 export default function EmployeePerformance() {
+    const { t } = useTranslation();
     const { globalData, employeeData, selectedProfile, staff, period } = usePage<PageProps>().props;
 
     const [tab, setTab] = useState<'global' | 'single'>(selectedProfile ? 'single' : 'global');
@@ -134,50 +137,73 @@ export default function EmployeePerformance() {
 
     const handlePeriodChange = useCallback((val: string) => {
         const params: Record<string, string | number | undefined> = { period: val };
-        if (selectedProfile) params.staff_profile_id = selectedProfile.id;
+
+        if (selectedProfile) {
+params.staff_profile_id = selectedProfile.id;
+}
+
         navigate(params);
     }, [navigate, selectedProfile]);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false);
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+setShowResults(false);
+}
         }
         document.addEventListener('mousedown', handleClickOutside);
+
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (searchQuery.length < 1) { setSearchResults([]); setShowResults(false); return; }
+        if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+}
+
+        if (searchQuery.length < 1) {
+ setSearchResults([]); setShowResults(false);
+
+ return; 
+}
 
         debounceRef.current = setTimeout(async () => {
             setSearching(true);
+
             try {
                 const res = await fetch(`/employee/performance/search?q=${encodeURIComponent(searchQuery)}`);
                 setSearchResults(await res.json());
                 setShowResults(true);
-            } catch { setSearchResults([]); }
-            finally { setSearching(false); }
+            } catch {
+ setSearchResults([]); 
+} finally {
+ setSearching(false); 
+}
         }, 300);
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+
+        return () => {
+ if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+} 
+};
     }, [searchQuery]);
 
     return (
         <>
-            <Head title="Performance Metrics" />
+            <Head title={t('employee.performance.title')} />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
-                <Heading title="Performance Metrics" description="Employee attendance analytics, productivity trends, and individual performance insights." />
+                <Heading title={t('employee.performance.title')} description={t('employee.performance.description')} />
 
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1 rounded-none border p-1">
                         <button onClick={() => handleTabChange('global')}
                             className={`rounded-none px-4 py-2 text-sm font-medium transition-colors ${tab === 'global' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                            GLOBAL OVERVIEW
+                            {t('employee.performance.global_overview')}
                         </button>
                         <button onClick={() => handleTabChange('single')}
                             className={`rounded-none px-4 py-2 text-sm font-medium transition-colors ${tab === 'single' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                            SINGLE EMPLOYEE
+                            {t('employee.performance.single_employee')}
                         </button>
                     </div>
 
@@ -192,9 +218,9 @@ export default function EmployeePerformance() {
                 </div>
 
                 <div className="relative" ref={searchRef}>
-                    <Label>Select Employee</Label>
+                    <Label>{t('employee.performance.select_employee')}</Label>
                     <div className="relative mt-2">
-                        <Input placeholder="Search name or email..." value={searchQuery}
+                        <Input placeholder={t('employee.performance.search_placeholder')} value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)} />
                         {searching && <div className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />}
                     </div>
@@ -228,7 +254,7 @@ export default function EmployeePerformance() {
                             {selectedProfile.role && (
                                 <Badge variant="outline">{selectedProfile.role}</Badge>
                             )}
-                            <Badge className="ml-auto" variant="outline">Selected</Badge>
+                            <Badge className="ml-auto" variant="outline">{t('employee.performance.selected')}</Badge>
                         </div>
                     )}
                 </div>
@@ -245,16 +271,17 @@ export default function EmployeePerformance() {
 // ─── GLOBAL ───────────────────────────────────────────────────
 
 function GlobalPerformance({ data }: { data: GlobalData }) {
+    const { t } = useTranslation();
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                 {[
-                    { label: 'Total Staff', value: String(data.kpi.total_staff), desc: 'Active profiles' },
-                    { label: 'In Now', value: String(data.kpi.active_today), desc: 'Currently clocked in' },
-                    { label: "Today's Clock-ins", value: String(data.kpi.checkins_today), desc: 'Total entries' },
-                    { label: 'Unique Today', value: String(data.kpi.unique_staff_today), desc: 'Distinct staff' },
-                    { label: 'Period Check-ins', value: String(data.kpi.total_checkins_period), desc: 'In selected period' },
-                    { label: 'Avg Shift Hours', value: String(data.kpi.avg_hours_per_shift), desc: 'Per completed shift' },
+                    { label: t('employee.performance.total_staff'), value: String(data.kpi.total_staff), desc: t('employee.performance.active_profiles') },
+                    { label: t('employee.performance.in_now'), value: String(data.kpi.active_today), desc: t('employee.performance.currently_clocked') },
+                    { label: t('employee.performance.todays_checkins'), value: String(data.kpi.checkins_today), desc: t('employee.performance.total_entries') },
+                    { label: t('employee.performance.unique_today'), value: String(data.kpi.unique_staff_today), desc: t('employee.performance.distinct_staff') },
+                    { label: t('employee.performance.period_checkins'), value: String(data.kpi.total_checkins_period), desc: t('employee.performance.in_selected_period') },
+                    { label: t('employee.performance.avg_shift_hours'), value: String(data.kpi.avg_hours_per_shift), desc: t('employee.performance.per_shift') },
                 ].map((k) => (
                     <Card key={k.label}>
                         <CardHeader className="p-3 pb-0"><CardTitle className="text-[10px] font-medium text-muted-foreground">{k.label}</CardTitle></CardHeader>
@@ -263,62 +290,62 @@ function GlobalPerformance({ data }: { data: GlobalData }) {
                 ))}
             </div>
 
-            <Section title="Daily Active Staff" desc="Unique staff who clocked in per day">
+            <Section title={t('employee.performance.daily_active')} desc={t('employee.performance.daily_active_desc')}>
                 <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={data.daily_active}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" fontSize={10} tickFormatter={(v: string) => v.slice(5)} />
                         <YAxis fontSize={12} allowDecimals={false} />
                         <Tooltip labelFormatter={(v: string) => new Date(v).toLocaleDateString()} />
-                        <Area type="monotone" dataKey="active_staff" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} strokeWidth={2} name="Active Staff" />
+                        <Area type="monotone" dataKey="active_staff" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} strokeWidth={2} name={t('employee.performance.chart_active_staff')} />
                     </AreaChart>
                 </ResponsiveContainer>
             </Section>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Weekly Clock-ins" desc="Total clock-ins per week">
+                <Section title={t('employee.performance.weekly_checkins')} desc={t('employee.performance.weekly_checkins_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.weekly_checkins}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="week" fontSize={10} />
                             <YAxis fontSize={12} allowDecimals={false} />
                             <Tooltip />
-                            <Bar dataKey="checkins" fill="#6366f1" radius={[4, 4, 0, 0]} name="Clock-ins" />
+                            <Bar dataKey="checkins" fill="#6366f1" radius={[4, 4, 0, 0]} name={t('employee.performance.chart_clockins')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Day of Week" desc="Total clock-ins by day">
+                <Section title={t('employee.performance.day_of_week')} desc={t('employee.performance.day_of_week_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.day_of_week}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="day" fontSize={11} />
                             <YAxis fontSize={12} allowDecimals={false} />
                             <Tooltip />
-                            <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Clock-ins" />
+                            <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name={t('employee.performance.chart_clockins')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
             </div>
 
-            <Section title="Attendance Heatmap" desc="Clock-in density by hour and day of week (last 90 days)">
+            <Section title={t('employee.performance.heatmap')} desc={t('employee.performance.heatmap_desc')}>
                 <HeatmapChart data={data.heatmap} />
             </Section>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Peak Clock-in Hours" desc="Total clock-ins by hour of day">
+                <Section title={t('employee.performance.peak_hours')} desc={t('employee.performance.peak_hours_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.peak_hours}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="hour" fontSize={9} interval={1} />
                             <YAxis fontSize={12} allowDecimals={false} />
                             <Tooltip />
-                            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} name="Clock-ins" />
+                            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} name={t('employee.performance.chart_clockins')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Monthly Trend (YoY)" desc="Unique staff per month">
+                <Section title={t('employee.performance.monthly_trend')} desc={t('employee.performance.monthly_trend_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <LineChart data={data.monthly_trend}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -326,43 +353,43 @@ function GlobalPerformance({ data }: { data: GlobalData }) {
                             <YAxis fontSize={12} />
                             <Tooltip />
                             <Legend />
-                            <Line type="monotone" dataKey="current_year" stroke="#6366f1" strokeWidth={2} name="This Year" />
-                            <Line type="monotone" dataKey="previous_year" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" name="Last Year" />
+                            <Line type="monotone" dataKey="current_year" stroke="#6366f1" strokeWidth={2} name={t('employee.performance.chart_this_year')} />
+                            <Line type="monotone" dataKey="previous_year" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" name={t('employee.performance.chart_last_year')} />
                         </LineChart>
                     </ResponsiveContainer>
                 </Section>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Section title="Staff Growth" desc="Cumulative hires over time">
+                <Section title={t('employee.performance.staff_growth')} desc={t('employee.performance.staff_growth_desc')}>
                     <ResponsiveContainer width="100%" height={220}>
                         <AreaChart data={data.staff_growth}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="date" fontSize={9} tickFormatter={(v: string) => v.slice(5)} />
                             <YAxis fontSize={11} />
                             <Tooltip />
-                            <Area type="monotone" dataKey="total_staff" stroke="#10b981" fill="#10b981" fillOpacity={0.12} strokeWidth={2} name="Total" />
+                            <Area type="monotone" dataKey="total_staff" stroke="#10b981" fill="#10b981" fillOpacity={0.12} strokeWidth={2} name={t('employee.performance.chart_total')} />
                         </AreaChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Employment Status" desc="Current staff distribution">
+                <Section title={t('employee.performance.employment_status')} desc={t('employee.performance.employment_status_desc')}>
                     <div className="flex h-[220px] items-center justify-center">
                         {data.status_breakdown.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
                                 <PieChart>
                                     <Pie data={data.status_breakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={85}
-                                        paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                        paddingAngle={3} dataKey="value" label={({ name: statusName, percent }) => `${t('employee.performance.' + statusName.toLowerCase())} ${(percent * 100).toFixed(0)}%`}>
                                         {data.status_breakdown.map((e, i) => <Cell key={i} fill={STATUS_COLORS[e.name] ?? '#64748b'} />)}
                                     </Pie>
                                     <Tooltip />
                                 </PieChart>
                             </ResponsiveContainer>
-                        ) : <p className="text-sm text-muted-foreground">No data</p>}
+                        ) : <p className="text-sm text-muted-foreground">{t('employee.performance.no_data')}</p>}
                     </div>
                 </Section>
 
-                <Section title="Role Distribution" desc="Staff by role">
+                <Section title={t('employee.performance.role_distribution')} desc={t('employee.performance.role_distribution_desc')}>
                     <div className="flex h-[220px] items-center justify-center">
                         {data.role_breakdown.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
@@ -374,30 +401,30 @@ function GlobalPerformance({ data }: { data: GlobalData }) {
                                     <Tooltip />
                                 </PieChart>
                             </ResponsiveContainer>
-                        ) : <p className="text-sm text-muted-foreground">No data</p>}
+                        ) : <p className="text-sm text-muted-foreground">{t('employee.performance.no_data')}</p>}
                     </div>
                 </Section>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Shift Duration Distribution" desc="How long staff typically work per shift">
+                <Section title={t('employee.performance.duration_dist')} desc={t('employee.performance.duration_dist_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.duration_distribution}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="range" fontSize={10} />
                             <YAxis fontSize={11} allowDecimals={false} />
                             <Tooltip />
-                            <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Shifts" />
+                            <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} name={t('employee.performance.chart_shifts')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Total Hours Worked" desc="Cumulative hours in selected period">
+                <Section title={t('employee.performance.total_hours')} desc={t('employee.performance.total_hours_desc')}>
                     <div className="flex h-[260px] flex-col items-center justify-center gap-2">
                         <p className="text-5xl font-bold tracking-tight text-emerald-600">{data.kpi.total_hours_period}</p>
-                        <p className="text-sm text-muted-foreground">hours in selected period</p>
+                        <p className="text-sm text-muted-foreground">{t('employee.performance.hours_in_period')}</p>
                         <p className="text-xs text-muted-foreground">
-                            Avg {data.kpi.avg_hours_per_shift} hrs / shift across {data.kpi.unique_staff_period} staff
+                            {t('employee.performance.avg_per_shift', { avg: data.kpi.avg_hours_per_shift, count: data.kpi.unique_staff_period })}
                         </p>
                     </div>
                 </Section>
@@ -409,9 +436,10 @@ function GlobalPerformance({ data }: { data: GlobalData }) {
 // ─── SINGLE EMPLOYEE ──────────────────────────────────────────
 
 function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
+    const { t } = useTranslation();
     if (!data) {
         return <Card><CardContent className="flex flex-col items-center gap-2 py-16">
-            <p className="text-muted-foreground text-sm">Select an employee above to view their performance metrics.</p>
+            <p className="text-muted-foreground text-sm">{t('employee.performance.select_prompt')}</p>
         </CardContent></Card>;
     }
 
@@ -421,82 +449,82 @@ function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Section title="Work Hours" desc="Period vs lifetime metrics">
+                <Section title={t('employee.performance.work_hours')} desc={t('employee.performance.work_hours_desc')}>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs text-muted-foreground">Hours This Period</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.hours_period')}</p>
                                 <p className="mt-0.5 text-3xl font-bold tracking-tight">{data.kpi.period_total_hours}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-muted-foreground">Avg / Day</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.avg_day')}</p>
                                 <p className="mt-0.5 text-3xl font-bold tracking-tight">
                                     {data.kpi.avg_hours_per_day}
-                                    <span className="text-base font-normal text-muted-foreground"> hrs</span>
+                                    <span className="text-base font-normal text-muted-foreground"> {t('employee.performance.hrs')}</span>
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between border-t pt-3">
                             <div>
-                                <p className="text-xs text-muted-foreground">This Week</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.this_week')}</p>
                                 <p className="mt-0.5 text-lg font-bold">{data.weekly_comparison.this_week_hours}
                                     <span className={`ml-1.5 text-sm font-medium ${weekChange > 0 ? 'text-emerald-600' : weekChange < 0 ? 'text-rose-600' : 'text-muted-foreground'}`}>
-                                        {weekChange === 0 ? '— same' : weekChange > 0 ? `+${weekChange.toFixed(1)}` : weekChange.toFixed(1)} hrs
+                                        {weekChange === 0 ? t('employee.performance.same') : weekChange > 0 ? `+${weekChange.toFixed(1)}` : weekChange.toFixed(1)} {t('employee.performance.hrs')}
                                     </span>
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Shifts This Period</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.shifts_period')}</p>
                                 <p className="mt-0.5 text-lg font-bold">{data.kpi.period_total_shifts}</p>
                             </div>
                         </div>
                     </div>
                 </Section>
 
-                <Section title="Work Ethic" desc="Consistency and attendance reliability">
+                <Section title={t('employee.performance.work_ethic')} desc={t('employee.performance.work_ethic_desc')}>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs text-muted-foreground">Consistency</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.consistency')}</p>
                                 <p className={`mt-0.5 text-3xl font-bold tracking-tight ${
                                     data.consistency_score >= 50 ? 'text-emerald-600' : data.consistency_score >= 20 ? 'text-amber-600' : 'text-rose-600'
                                 }`}>{data.consistency_score}%</p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                    {data.kpi.period_days_worked} days worked
-                                </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {t('employee.performance.days_worked', { count: data.kpi.period_days_worked })}
+                                    </p>
                             </div>
                             <div>
-                                <p className="text-xs text-muted-foreground">Avg Shift</p>
-                                <p className="mt-0.5 text-3xl font-bold tracking-tight">{data.kpi.period_avg_shift_hours}<span className="text-base font-normal text-muted-foreground"> hrs</span></p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.avg_shift')}</p>
+                                <p className="mt-0.5 text-3xl font-bold tracking-tight">{data.kpi.period_avg_shift_hours}<span className="text-base font-normal text-muted-foreground"> {t('employee.performance.hrs')}</span></p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between border-t pt-3">
                             <div>
-                                <p className="text-xs text-muted-foreground">Avg Hours / Week</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.avg_hours_week')}</p>
                                 <p className="mt-0.5 text-lg font-bold">{data.kpi.avg_hours_per_week}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Lifetime Hours</p>
+                                <p className="text-xs text-muted-foreground">{t('employee.performance.lifetime_hours')}</p>
                                 <p className="mt-0.5 text-lg font-bold">{data.kpi.lifetime_hours}</p>
                             </div>
                         </div>
                     </div>
                 </Section>
 
-                <Section title="Attendance Streaks" desc="Consecutive days worked">
+                <Section title={t('employee.performance.streaks')} desc={t('employee.performance.streaks_desc')}>
                     <div className="flex h-full flex-col items-center justify-center gap-4 py-6">
                         <div className="text-center">
                             <p className="text-5xl font-bold">{data.streak.current}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Current Streak (days)</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('employee.performance.current_streak')}</p>
                         </div>
                         <div className="h-px w-16 bg-border" />
                         <div className="text-center">
                             <p className="text-3xl font-bold text-muted-foreground">{data.streak.longest}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Longest Streak (days)</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('employee.performance.longest_streak')}</p>
                         </div>
                         <div className="mt-2 rounded-full bg-muted px-4 py-1.5 text-center">
                             <p className="text-sm font-medium">
-                                {data.kpi.lifetime_shifts} lifetime shifts
+                                {t('employee.performance.lifetime_shifts', { count: data.kpi.lifetime_shifts })}
                             </p>
                         </div>
                     </div>
@@ -504,21 +532,21 @@ function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Weekly Comparison" desc="Hours worked this week vs last week">
+                <Section title={t('employee.performance.weekly_compare')} desc={t('employee.performance.weekly_compare_desc')}>
                     <div className="flex h-[200px] items-center justify-center gap-8">
                         <div className="text-center">
-                            <p className="mb-1 text-xs text-muted-foreground">Last Week</p>
+                            <p className="mb-1 text-xs text-muted-foreground">{t('employee.performance.last_week')}</p>
                             <p className="text-3xl font-bold text-muted-foreground">{data.weekly_comparison.last_week_hours}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">{data.weekly_comparison.last_week_days} days</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('employee.performance.days_count', { count: data.weekly_comparison.last_week_days })}</p>
                         </div>
                         <div className="text-2xl text-muted-foreground">→</div>
                         <div className="text-center">
-                            <p className="mb-1 text-xs text-muted-foreground">This Week</p>
+                            <p className="mb-1 text-xs text-muted-foreground">{t('employee.performance.this_week')}</p>
                             <p className="text-3xl font-bold">{data.weekly_comparison.this_week_hours}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">{data.weekly_comparison.this_week_days} days</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('employee.performance.days_count', { count: data.weekly_comparison.this_week_days })}</p>
                         </div>
                         <div className="text-center">
-                            <p className="mb-1 text-xs text-muted-foreground">Change</p>
+                            <p className="mb-1 text-xs text-muted-foreground">{t('employee.performance.change')}</p>
                             <p className={`text-xl font-bold ${
                                 data.weekly_comparison.change_hours > 0 ? 'text-emerald-600' :
                                 data.weekly_comparison.change_hours < 0 ? 'text-rose-600' : 'text-muted-foreground'
@@ -529,19 +557,19 @@ function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
                     </div>
                 </Section>
 
-                <Section title="Avg Arrival Time" desc="Typical clock-in time">
+                <Section title={t('employee.performance.avg_arrival')} desc={t('employee.performance.avg_arrival_desc')}>
                     <div className="flex h-[200px] flex-col items-center justify-center">
                         <p className="text-5xl font-bold tracking-tight">
                             {Math.floor(data.kpi.avg_arrival_hour)}:
                             {String(Math.round((data.kpi.avg_arrival_hour % 1) * 60)).padStart(2, '0')}
                         </p>
-                        <p className="mt-2 text-sm text-muted-foreground">Average clock-in time</p>
+                        <p className="mt-2 text-sm text-muted-foreground">{t('employee.performance.avg_clock_in')}</p>
                     </div>
                 </Section>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Monthly Hours Trend" desc="Hours worked per month">
+                <Section title={t('employee.performance.monthly_hours')} desc={t('employee.performance.monthly_hours_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.monthly_hours}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -549,27 +577,27 @@ function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
                             <YAxis fontSize={11} allowDecimals={false} />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="total_hours" fill="#6366f1" radius={[4, 4, 0, 0]} name="Hours" />
-                            <Line type="monotone" dataKey="days_worked" stroke="#10b981" strokeWidth={2} name="Days" />
+                            <Bar dataKey="total_hours" fill="#6366f1" radius={[4, 4, 0, 0]} name={t('employee.performance.chart_hours')} />
+                            <Line type="monotone" dataKey="days_worked" stroke="#10b981" strokeWidth={2} name={t('employee.performance.chart_days')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Daily Hours" desc="Hours per day in selected period">
+                <Section title={t('employee.performance.daily_hours')} desc={t('employee.performance.daily_hours_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <AreaChart data={data.attendance_dates}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="date" fontSize={10} tickFormatter={(v: string) => v.slice(5)} />
-                            <YAxis fontSize={11} label={{ value: 'Hours', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
-                            <Tooltip labelFormatter={(v: string) => new Date(v).toLocaleDateString()} formatter={(v: number) => [`${v} hrs`, 'Hours']} />
-                            <Area type="monotone" dataKey="hours_worked" stroke="#10b981" fill="#10b981" fillOpacity={0.12} strokeWidth={2} name="Hours" />
+                            <YAxis fontSize={11} label={{ value: t('employee.performance.hours_label'), angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                            <Tooltip labelFormatter={(v: string) => new Date(v).toLocaleDateString()} formatter={(v: number) => [`${v} ${t('employee.performance.hrs')}`, t('employee.performance.chart_hours')]} />
+                            <Area type="monotone" dataKey="hours_worked" stroke="#10b981" fill="#10b981" fillOpacity={0.12} strokeWidth={2} name={t('employee.performance.chart_hours')} />
                         </AreaChart>
                     </ResponsiveContainer>
                 </Section>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Section title="Favorite Days &amp; Arrival Time" desc="Clock-in frequency and avg arrival by day">
+                <Section title={t('employee.performance.favorite_days')} desc={t('employee.performance.favorite_days_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.favorite_days}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -578,20 +606,20 @@ function EmployeePerformanceView({ data }: { data: EmployeeData | null }) {
                             <YAxis yAxisId="right" orientation="right" fontSize={12} domain={[0, 24]} tickFormatter={(v) => `${Math.floor(v)}:00`} />
                             <Tooltip />
                             <Legend />
-                            <Bar yAxisId="left" dataKey="visit_count" fill="#6366f1" name="Visits" radius={[4, 4, 0, 0]} />
-                            <Line yAxisId="right" type="monotone" dataKey="avg_arrival_hour" stroke="#f59e0b" strokeWidth={2} name="Avg Arrival" dot={{ r: 4 }} />
+                            <Bar yAxisId="left" dataKey="visit_count" fill="#6366f1" name={t('employee.performance.chart_visits')} radius={[4, 4, 0, 0]} />
+                            <Line yAxisId="right" type="monotone" dataKey="avg_arrival_hour" stroke="#f59e0b" strokeWidth={2} name={t('employee.performance.chart_avg_arrival')} dot={{ r: 4 }} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
 
-                <Section title="Clock-in Hour Distribution" desc="When this employee typically clocks in">
+                <Section title={t('employee.performance.clockin_dist')} desc={t('employee.performance.clockin_dist_desc')}>
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={data.visit_hour_distribution}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="hour" fontSize={9} interval={1} />
                             <YAxis fontSize={11} allowDecimals={false} />
                             <Tooltip />
-                            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} name="Clock-ins" />
+                            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} name={t('employee.performance.chart_clockins')} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Section>
@@ -613,7 +641,9 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
 }
 
 function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
+    const { t } = useTranslation();
     const maxVal = Math.max(...data.map((h) => h.average_check_ins), 1);
+
     return (
         <div className="overflow-x-auto">
             <div className="min-w-[700px]">
@@ -622,12 +652,13 @@ function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
                 </div>
                 {DAYS.map((day) => (
                     <div key={day} className="mb-0.5 flex items-center">
-                        <div className="w-[60px] shrink-0 pr-2 text-right text-xs font-medium text-muted-foreground">{day.slice(0, 3)}</div>
+                        <div className="w-[60px] shrink-0 pr-2 text-right text-xs font-medium text-muted-foreground">{t('employee.performance.' + day.toLowerCase().slice(0, 3))}</div>
                         {HOURS.map((hour) => {
                             const entry = data.find((h) => h.day === day && h.hour === hour);
                             const val = entry?.average_check_ins ?? 0;
                             const intensity = maxVal > 0 ? Math.min(val / maxVal, 1) : 0;
-                            return <div key={`${day}-${hour}`} className="flex-1" title={`${day} ${hour}: ${val}`}>
+
+                            return <div key={`${day}-${hour}`} className="flex-1" title={`${t('employee.performance.' + day.toLowerCase())} ${hour}: ${val}`}>
                                 <div className="mx-[1px] h-5 rounded-none" style={{
                                     backgroundColor: intensity > 0 ? `rgba(16, 185, 129, ${0.1 + intensity * 0.8})` : 'hsl(var(--muted))',
                                 }} />
@@ -636,9 +667,9 @@ function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
                     </div>
                 ))}
                 <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>Low</span>
+                    <span>{t('employee.performance.low')}</span>
                     {[0.1, 0.3, 0.5, 0.7, 0.9].map((i) => <div key={i} className="size-3 rounded-none" style={{ backgroundColor: `rgba(16, 185, 129, ${i})` }} />)}
-                    <span>High</span>
+                    <span>{t('employee.performance.high')}</span>
                 </div>
             </div>
         </div>
@@ -647,6 +678,6 @@ function HeatmapChart({ data }: { data: HeatmapEntry[] }) {
 
 EmployeePerformance.layout = {
     breadcrumbs: [
-        { title: 'Performance Metrics', href: '/employee/performance' },
+        { title: i18n.t('employee.performance.title'), href: '/employee/performance' },
     ],
 };

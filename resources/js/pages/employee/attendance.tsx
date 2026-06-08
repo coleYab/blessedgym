@@ -1,4 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
+import { Clock, ClockArrowDown, ClockArrowUp, Search, Users } from 'lucide-react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Clock, ClockArrowDown, ClockArrowUp, Search, Users } from 'lucide-react';
 
 type StaffProfile = {
   id: number;
@@ -31,14 +33,15 @@ export default function EmployeeAttendance({
   staff: StaffProfile[];
   search: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <>
-      <Head title="Employee Attendance" />
+      <Head title={t('employee.attendance.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Attendance & Clock In/Out"
-          description="Search for a staff member to clock them in or out."
+          title={t('employee.attendance.title')}
+          description={t('employee.attendance.description')}
         />
 
         <Card>
@@ -49,19 +52,19 @@ export default function EmployeeAttendance({
               className="flex items-end gap-4"
             >
               <div className="flex-1">
-                <Label htmlFor="search">Search Staff</Label>
+                <Label htmlFor="search">{t('employee.attendance.search')}</Label>
                 <div className="relative mt-2">
                   <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                   <Input
                     id="search"
                     name="search"
                     defaultValue={search ?? ''}
-                    placeholder="Search by name or email..."
+                    placeholder={t('employee.attendance.search_placeholder')}
                     className="pl-9"
                   />
                 </div>
               </div>
-              <Button type="submit">Search</Button>
+              <Button type="submit">{t('employee.attendance.search_btn')}</Button>
             </Form>
           </CardContent>
         </Card>
@@ -69,8 +72,8 @@ export default function EmployeeAttendance({
         {search && (
           <p className="text-sm text-muted-foreground">
             {staff.length > 0
-              ? `${staff.length} staff ${staff.length !== 1 ? 'members' : 'member'} found for "${search}"`
-              : `No staff found for "${search}"`}
+              ? t('employee.attendance.found', { count: staff.length, search })
+              : t('employee.attendance.not_found', { search })}
           </p>
         )}
 
@@ -87,10 +90,10 @@ export default function EmployeeAttendance({
             <CardContent className="flex flex-col items-center gap-2 py-12">
               <Users className="text-muted-foreground size-12" />
               <p className="text-muted-foreground text-sm">
-                No staff match your search.
+                {t('employee.attendance.no_match')}
               </p>
               <p className="text-muted-foreground text-xs">
-                Try a different name or email.
+                {t('employee.attendance.try_different')}
               </p>
             </CardContent>
           </Card>
@@ -101,7 +104,7 @@ export default function EmployeeAttendance({
             <CardContent className="flex flex-col items-center gap-2 py-12">
               <Clock className="text-muted-foreground size-12" />
               <p className="text-muted-foreground text-sm">
-                Search for a staff member to clock them in or out.
+                {t('employee.attendance.prompt')}
               </p>
             </CardContent>
           </Card>
@@ -112,6 +115,7 @@ export default function EmployeeAttendance({
 }
 
 function StaffCard({ profile }: { profile: StaffProfile }) {
+  const { t } = useTranslation();
   const initials = profile.user
     ? profile.user.name
         .split(' ')
@@ -142,12 +146,12 @@ function StaffCard({ profile }: { profile: StaffProfile }) {
         {profile.current_attendance_id ? (
           <Badge variant="default" className="shrink-0 bg-emerald-600 hover:bg-emerald-600">
             <ClockArrowUp className="mr-1 size-3" />
-            Clocked In
+            {t('employee.attendance.clocked_in')}
           </Badge>
         ) : (
           <Badge variant="secondary" className="shrink-0">
             <ClockArrowDown className="mr-1 size-3" />
-            Off Duty
+            {t('employee.attendance.off_duty')}
           </Badge>
         )}
       </CardHeader>
@@ -170,7 +174,7 @@ function StaffCard({ profile }: { profile: StaffProfile }) {
             <input type="hidden" name="staff_profile_id" value={profile.id} />
             <Button type="submit" className="w-full" size="sm">
               <ClockArrowDown className="mr-1 size-4" />
-              Clock In
+              {t('employee.attendance.clock_in')}
             </Button>
           </Form>
         )}
@@ -184,7 +188,7 @@ function StaffCard({ profile }: { profile: StaffProfile }) {
             <input type="hidden" name="staff_profile_id" value={profile.id} />
             <Button type="submit" variant="secondary" className="w-full" size="sm">
               <ClockArrowUp className="mr-1 size-4" />
-              Clock Out
+              {t('employee.attendance.clock_out')}
             </Button>
           </Form>
         )}
@@ -195,7 +199,7 @@ function StaffCard({ profile }: { profile: StaffProfile }) {
 
 EmployeeAttendance.layout = {
   breadcrumbs: [
-    { title: 'Employee Management', href: '/employee/attendance' },
-    { title: 'Attendance & Clock In/Out', href: '/employee/attendance' },
+    { title: i18n.t('employee.attendance.breadcrumb_management'), href: '/employee/attendance' },
+    { title: i18n.t('employee.attendance.title'), href: '/employee/attendance' },
   ],
 };

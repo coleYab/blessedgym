@@ -91,11 +91,15 @@ if (IS_BROWSER) {
       spotlightBackdrop.className = 'impeccable-spotlight-backdrop';
       document.body.appendChild(spotlightBackdrop);
     }
+
     return spotlightBackdrop;
   }
 
   function updateSpotlightClipPath() {
-    if (!spotlightBackdrop || !spotlightTarget) return;
+    if (!spotlightBackdrop || !spotlightTarget) {
+return;
+}
+
     const r = spotlightTarget.getBoundingClientRect();
     // Match the overlay's outer edge: element rect + 4px (2px overlay offset + 2px outline width)
     const inset = 4;
@@ -112,12 +116,17 @@ if (IS_BROWSER) {
   }
 
   function showSpotlight(target) {
-    if (!target || !target.getBoundingClientRect) return;
+    if (!target || !target.getBoundingClientRect) {
+return;
+}
+
     // Respect the spotlightBlur setting: if disabled, don't show the backdrop
     if (window.__IMPECCABLE_CONFIG__?.spotlightBlur === false) {
       spotlightTarget = target;
+
       return;
     }
+
     spotlightTarget = target;
     const bd = getSpotlightBackdrop();
     updateSpotlightClipPath();
@@ -126,25 +135,34 @@ if (IS_BROWSER) {
 
   function hideSpotlight() {
     spotlightTarget = null;
-    if (spotlightBackdrop) spotlightBackdrop.classList.remove('impeccable-visible');
+
+    if (spotlightBackdrop) {
+spotlightBackdrop.classList.remove('impeccable-visible');
+}
   }
 
   function isInViewport(el) {
     const r = el.getBoundingClientRect();
+
     return r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
   }
 
   // Reposition spotlight on scroll/resize
   window.addEventListener('scroll', () => {
-    if (spotlightTarget) updateSpotlightClipPath();
+    if (spotlightTarget) {
+updateSpotlightClipPath();
+}
   }, { passive: true });
   window.addEventListener('resize', () => {
-    if (spotlightTarget) updateSpotlightClipPath();
+    if (spotlightTarget) {
+updateSpotlightClipPath();
+}
   });
 
   const overlays = [];
   const TYPE_LABELS = {};
   const RULE_CATEGORY = {};
+
   for (const ap of ANTIPATTERNS) {
     TYPE_LABELS[ap.id] = ap.name.toLowerCase();
     RULE_CATEGORY[ap.id] = ap.category || 'quality';
@@ -152,17 +170,27 @@ if (IS_BROWSER) {
 
   function isInFixedContext(el) {
     let p = el;
+
     while (p && p !== document.body) {
-      if (getComputedStyle(p).position === 'fixed') return true;
+      if (getComputedStyle(p).position === 'fixed') {
+return true;
+}
+
       p = p.parentElement;
     }
+
     return false;
   }
 
   function positionOverlay(overlay) {
     const el = overlay._targetEl;
-    if (!el) return;
+
+    if (!el) {
+return;
+}
+
     const rect = el.getBoundingClientRect();
+
     if (overlay._isFixed) {
       // Viewport-relative coords for fixed targets
       overlay.style.top = `${rect.top - 2}px`;
@@ -172,15 +200,22 @@ if (IS_BROWSER) {
       overlay.style.top = `${rect.top + scrollY - 2}px`;
       overlay.style.left = `${rect.left + scrollX - 2}px`;
     }
+
     overlay.style.width = `${rect.width + 4}px`;
     overlay.style.height = `${rect.height + 4}px`;
   }
 
   function repositionOverlays() {
     for (const o of overlays) {
-      if (!o._targetEl || o.classList.contains('impeccable-banner')) continue;
+      if (!o._targetEl || o.classList.contains('impeccable-banner')) {
+continue;
+}
+
       // Skip overlays whose target is currently hidden (display: none on the overlay)
-      if (o.style.display === 'none') continue;
+      if (o.style.display === 'none') {
+continue;
+}
+
       positionOverlay(o);
     }
   }
@@ -193,6 +228,7 @@ if (IS_BROWSER) {
   window.addEventListener('resize', onResize);
   // Reposition on scroll too -- catches sticky/parallax shifts
   window.addEventListener('scroll', onResize, { passive: true });
+
   // Reposition when body resizes (lazy-loaded images, dynamic content, fonts loading)
   if (typeof ResizeObserver !== 'undefined') {
     const bodyResizeObserver = new ResizeObserver(onResize);
@@ -207,12 +243,18 @@ if (IS_BROWSER) {
   const visibilityObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       const overlay = entry.target._impeccableOverlay;
-      if (!overlay) continue;
+
+      if (!overlay) {
+continue;
+}
+
       if (entry.isIntersecting) {
         overlay.style.display = '';
         positionOverlay(overlay);
+
         if (!overlay._revealed) {
           overlay._revealed = true;
+
           if (firstScanDone) {
             // Subsequent reveals (re-scans, scroll-into-view): instant, no animation
             overlay.style.animation = 'none';
@@ -220,9 +262,13 @@ if (IS_BROWSER) {
             // Initial scan: staggered cascade reveal
             overlay.style.animationDelay = `${Math.min((overlay._staggerIndex || 0) * 60, 600)}ms`;
           }
+
           requestAnimationFrame(() => {
             overlay.classList.add('impeccable-visible');
-            if (overlay._checkLabel) overlay._checkLabel();
+
+            if (overlay._checkLabel) {
+overlay._checkLabel();
+}
           });
         }
       } else {
@@ -232,16 +278,27 @@ if (IS_BROWSER) {
   }, { rootMargin: '99999px' });
 
   function detachOverlay(overlay) {
-    if (!overlay) return;
+    if (!overlay) {
+return;
+}
+
     if (typeof overlay._cleanup === 'function') {
-      try { overlay._cleanup(); } catch { /* best effort overlay teardown */ }
+      try {
+ overlay._cleanup(); 
+} catch { /* best effort overlay teardown */ }
     }
+
     if (overlay._targetEl && overlay._targetEl._impeccableOverlay === overlay) {
       visibilityObserver.unobserve(overlay._targetEl);
       delete overlay._targetEl._impeccableOverlay;
     }
+
     const idx = overlays.indexOf(overlay);
-    if (idx >= 0) overlays.splice(idx, 1);
+
+    if (idx >= 0) {
+overlays.splice(idx, 1);
+}
+
     overlay.remove();
   }
 
@@ -249,9 +306,15 @@ if (IS_BROWSER) {
   // Listens at document level so it catches transitions on ancestor elements
   // (the transform may be on a parent, not the flagged element itself).
   document.addEventListener('transitionend', (e) => {
-    if (e.propertyName !== 'transform') return;
+    if (e.propertyName !== 'transform') {
+return;
+}
+
     for (const o of overlays) {
-      if (!o._targetEl || o.classList.contains('impeccable-banner') || o.style.display === 'none') continue;
+      if (!o._targetEl || o.classList.contains('impeccable-banner') || o.style.display === 'none') {
+continue;
+}
+
       if (e.target === o._targetEl || e.target.contains(o._targetEl)) {
         positionOverlay(o);
       }
@@ -259,7 +322,10 @@ if (IS_BROWSER) {
   });
 
   const highlight = function(el, findings) {
-    if (el._impeccableOverlay) detachOverlay(el._impeccableOverlay);
+    if (el._impeccableOverlay) {
+detachOverlay(el._impeccableOverlay);
+}
+
     const hasSlop = findings.some(f => RULE_CATEGORY[f.type || f.id] === 'slop');
 
     const fixed = isInFixedContext(el);
@@ -280,6 +346,7 @@ if (IS_BROWSER) {
     const entries = findings.map(f => {
       const name = TYPE_LABELS[f.type || f.id] || f.type || f.id;
       const prefix = RULE_CATEGORY[f.type || f.id] === 'slop' ? '\u2726 ' : '';
+
       return { name: prefix + name, detail: f.detail || f.snippet };
     });
     const allText = entries.map(e => e.name).join(', ');
@@ -314,7 +381,10 @@ if (IS_BROWSER) {
     }
 
     function enableCycleMode() {
-      if (cycleMode || entries.length < 2) return;
+      if (cycleMode || entries.length < 2) {
+return;
+}
+
       cycleMode = true;
 
       const btnStyle = {
@@ -377,6 +447,7 @@ if (IS_BROWSER) {
       outline.classList.add('impeccable-hover');
       outline.style.outlineColor = BRAND_COLOR_HOVER;
       label.style.background = BRAND_COLOR_HOVER;
+
       if (cycleMode) {
         updateCycleText();
       } else {
@@ -388,6 +459,7 @@ if (IS_BROWSER) {
       outline.classList.remove('impeccable-hover');
       outline.style.outlineColor = '';
       label.style.background = LABEL_BG;
+
       if (cycleMode) {
         updateCycleText();
       } else {
@@ -406,7 +478,10 @@ if (IS_BROWSER) {
   };
 
   const showPageBanner = function(findings) {
-    if (!findings.length) return;
+    if (!findings.length) {
+return;
+}
+
     const banner = document.createElement('div');
     banner.className = 'impeccable-overlay impeccable-banner';
     Object.assign(banner.style, {
@@ -430,6 +505,7 @@ if (IS_BROWSER) {
       padding: '0 12px', scrollSnapType: 'x mandatory',
       scrollbarWidth: 'none',
     });
+
     for (const f of findings) {
       const prefix = RULE_CATEGORY[f.type] === 'slop' ? '\u2726 ' : '';
       const tag = document.createElement('span');
@@ -441,6 +517,7 @@ if (IS_BROWSER) {
       });
       scrollArea.appendChild(tag);
     }
+
     banner.appendChild(scrollArea);
 
     // Controls area (only in standalone mode, not extension)
@@ -482,6 +559,7 @@ if (IS_BROWSER) {
 
       banner.appendChild(controls);
     }
+
     document.body.appendChild(banner);
     overlays.push(banner);
   };
@@ -489,10 +567,22 @@ if (IS_BROWSER) {
   // Heuristic for skipping CSS-in-JS hashed class names like "css-1a2b3c" or "_2x4hG_".
   // These change between builds and produce brittle, ugly selectors.
   function isLikelyHashedClass(c) {
-    if (!c) return true;
-    if (/^(css|sc|emotion|jsx|module)-[\w-]{4,}$/i.test(c)) return true;
-    if (/^_[\w-]{5,}$/.test(c)) return true;
-    if (/^[a-z0-9]{6,}$/i.test(c) && /\d/.test(c)) return true;
+    if (!c) {
+return true;
+}
+
+    if (/^(css|sc|emotion|jsx|module)-[\w-]{4,}$/i.test(c)) {
+return true;
+}
+
+    if (/^_[\w-]{5,}$/.test(c)) {
+return true;
+}
+
+    if (/^[a-z0-9]{6,}$/i.test(c) && /\d/.test(c)) {
+return true;
+}
+
     return false;
   }
 
@@ -504,6 +594,7 @@ if (IS_BROWSER) {
       const classes = [...el.classList]
         .filter(c => !c.startsWith('impeccable-') && !isLikelyHashedClass(c))
         .slice(0, 2);
+
       if (classes.length > 0) {
         sel += '.' + classes.map(c => CSS.escape(c)).join('.');
       }
@@ -511,9 +602,11 @@ if (IS_BROWSER) {
 
     // Disambiguate among siblings only if the parent has multiple matches
     const parent = el.parentElement;
+
     if (parent) {
       try {
         const matching = parent.querySelectorAll(':scope > ' + sel);
+
         if (matching.length > 1) {
           const sameType = [...parent.children].filter(c => c.tagName === el.tagName);
           const idx = sameType.indexOf(el) + 1;
@@ -524,13 +617,22 @@ if (IS_BROWSER) {
         sel = `${tag}:nth-child(${idx})`;
       }
     }
+
     return sel;
   }
 
   function generateSelector(el) {
-    if (el === document.body) return 'body';
-    if (el === document.documentElement) return 'html';
-    if (el.id) return '#' + CSS.escape(el.id);
+    if (el === document.body) {
+return 'body';
+}
+
+    if (el === document.documentElement) {
+return 'html';
+}
+
+    if (el.id) {
+return '#' + CSS.escape(el.id);
+}
 
     const parts = [];
     let current = el;
@@ -548,8 +650,10 @@ if (IS_BROWSER) {
 
       // Stop as soon as the partial selector uniquely identifies the target
       const trySelector = parts.join(' > ');
+
       try {
         const matches = document.querySelectorAll(trySelector);
+
         if (matches.length === 1 && matches[0] === el) {
           return trySelector;
         }
@@ -571,20 +675,33 @@ if (IS_BROWSER) {
 
   function getDirectTextRect(el) {
     const rects = [];
+
     for (const node of el.childNodes) {
-      if (node.nodeType !== 3 || !(node.textContent || '').trim()) continue;
+      if (node.nodeType !== 3 || !(node.textContent || '').trim()) {
+continue;
+}
+
       const range = document.createRange();
       range.selectNodeContents(node);
+
       for (const rect of range.getClientRects()) {
-        if (rect.width >= 1 && rect.height >= 1) rects.push(rect);
+        if (rect.width >= 1 && rect.height >= 1) {
+rects.push(rect);
+}
       }
+
       range.detach?.();
     }
-    if (rects.length === 0) return null;
+
+    if (rects.length === 0) {
+return null;
+}
+
     const left = Math.min(...rects.map(r => r.left));
     const top = Math.min(...rects.map(r => r.top));
     const right = Math.max(...rects.map(r => r.right));
     const bottom = Math.max(...rects.map(r => r.bottom));
+
     return {
       left,
       top,
@@ -601,12 +718,17 @@ if (IS_BROWSER) {
     const reasons = new Set();
     const bgClip = style.webkitBackgroundClip || style.backgroundClip || '';
     const ownBgImage = style.backgroundImage || '';
+
     if (bgClip === 'text' && ownBgImage && ownBgImage !== 'none') {
       reasons.add('background-clip text');
     }
-    if (style.textShadow && style.textShadow !== 'none') reasons.add('text shadow');
+
+    if (style.textShadow && style.textShadow !== 'none') {
+reasons.add('text shadow');
+}
 
     let current = el;
+
     while (current && current.nodeType === 1) {
       const tag = current.tagName?.toLowerCase();
       const currentStyle = getComputedStyle(current);
@@ -614,33 +736,64 @@ if (IS_BROWSER) {
       const isDocumentSurface = tag === 'body' || tag === 'html';
 
       if (!isDocumentSurface && bgImage && bgImage !== 'none') {
-        if (/url\s*\(/i.test(bgImage)) reasons.add('image background');
-        if (/gradient/i.test(bgImage)) reasons.add('gradient background');
+        if (/url\s*\(/i.test(bgImage)) {
+reasons.add('image background');
+}
+
+        if (/gradient/i.test(bgImage)) {
+reasons.add('gradient background');
+}
       }
-      if (parseFloat(currentStyle.opacity) < 0.99) reasons.add('opacity stack');
-      if (currentStyle.mixBlendMode && currentStyle.mixBlendMode !== 'normal') reasons.add('blend mode');
-      if (currentStyle.filter && currentStyle.filter !== 'none') reasons.add('filter');
-      if (currentStyle.backdropFilter && currentStyle.backdropFilter !== 'none') reasons.add('backdrop filter');
+
+      if (parseFloat(currentStyle.opacity) < 0.99) {
+reasons.add('opacity stack');
+}
+
+      if (currentStyle.mixBlendMode && currentStyle.mixBlendMode !== 'normal') {
+reasons.add('blend mode');
+}
+
+      if (currentStyle.filter && currentStyle.filter !== 'none') {
+reasons.add('filter');
+}
+
+      if (currentStyle.backdropFilter && currentStyle.backdropFilter !== 'none') {
+reasons.add('backdrop filter');
+}
 
       const solidBg = parseRgb(currentStyle.backgroundColor);
-      if (solidBg && solidBg.a >= 0.95 && (!bgImage || bgImage === 'none')) break;
+
+      if (solidBg && solidBg.a >= 0.95 && (!bgImage || bgImage === 'none')) {
+break;
+}
+
       current = current.parentElement;
     }
 
     const sampleRect = getDirectTextRect(el) || el.getBoundingClientRect();
+
     if (sampleRect && document.elementsFromPoint) {
       const points = [
         [sampleRect.left + sampleRect.width / 2, sampleRect.top + sampleRect.height / 2],
         [sampleRect.left + Math.min(sampleRect.width - 1, Math.max(1, sampleRect.width * 0.25)), sampleRect.top + sampleRect.height / 2],
         [sampleRect.left + Math.min(sampleRect.width - 1, Math.max(1, sampleRect.width * 0.75)), sampleRect.top + sampleRect.height / 2],
       ];
+
       for (const [x, y] of points) {
-        if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
+        if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) {
+continue;
+}
+
         const stack = document.elementsFromPoint(x, y);
         const selfIndex = stack.findIndex(node => node === el || el.contains(node) || node.contains?.(el));
-        if (selfIndex < 0) continue;
+
+        if (selfIndex < 0) {
+continue;
+}
+
         for (const node of stack.slice(selfIndex + 1)) {
           const nodeTag = node.tagName?.toLowerCase();
+
           if (nodeTag === 'img' || nodeTag === 'picture' || nodeTag === 'video' || nodeTag === 'canvas' || nodeTag === 'svg') {
             reasons.add(`${nodeTag} underlay`);
             break;
@@ -655,29 +808,57 @@ if (IS_BROWSER) {
   function collectVisualContrastCandidates(options = {}) {
     const maxCandidates = Number.isFinite(options.maxCandidates) ? options.maxCandidates : 12;
     const candidates = [];
+
     for (const el of document.querySelectorAll('*')) {
-      if (candidates.length >= maxCandidates) break;
-      if (el.closest('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) continue;
-      if (el.closest('[id^="impeccable-live-"]')) continue;
-      if (el === document.body || el === document.documentElement) continue;
+      if (candidates.length >= maxCandidates) {
+break;
+}
+
+      if (el.closest('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) {
+continue;
+}
+
+      if (el.closest('[id^="impeccable-live-"]')) {
+continue;
+}
+
+      if (el === document.body || el === document.documentElement) {
+continue;
+}
 
       const tag = el.tagName.toLowerCase();
       const style = getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden') continue;
+
+      if (style.display === 'none' || style.visibility === 'hidden') {
+continue;
+}
+
       const directText = getDirectText(el);
       const hasDirectText = directText.trim().length > 0;
-      if (!hasDirectText || isEmojiOnlyText(directText)) continue;
+
+      if (!hasDirectText || isEmojiOnlyText(directText)) {
+continue;
+}
 
       const bgColor = readOwnBackgroundColor(el, style);
       const isStyledButton = (tag === 'a' || tag === 'button')
         && bgColor && bgColor.a > 0.5;
-      if (SAFE_TAGS.has(tag) && !isStyledButton) continue;
+
+      if (SAFE_TAGS.has(tag) && !isStyledButton) {
+continue;
+}
 
       const rect = getDirectTextRect(el) || el.getBoundingClientRect();
-      if (!rect || rect.width < 4 || rect.height < 4) continue;
+
+      if (!rect || rect.width < 4 || rect.height < 4) {
+continue;
+}
 
       const reasons = collectVisualContrastReasons(el, style);
-      if (reasons.length === 0) continue;
+
+      if (reasons.length === 0) {
+continue;
+}
 
       const textColor = parseRgb(style.color);
       const fontSize = parseFloat(style.fontSize) || 16;
@@ -709,6 +890,7 @@ if (IS_BROWSER) {
         backgroundClipText: reasons.includes('background-clip text'),
       });
     }
+
     return candidates;
   }
 
@@ -720,11 +902,16 @@ if (IS_BROWSER) {
   }
 
   function blendRgba(fg, bg) {
-    if (!fg) return bg || null;
+    if (!fg) {
+return bg || null;
+}
+
     if (!bg || fg.a == null || fg.a >= 0.999) {
       return { r: clampByte(fg.r), g: clampByte(fg.g), b: clampByte(fg.b), a: fg.a == null ? 1 : fg.a };
     }
+
     const alpha = Math.max(0, Math.min(1, fg.a));
+
     return {
       r: clampByte(fg.r * alpha + bg.r * (1 - alpha)),
       g: clampByte(fg.g * alpha + bg.g * (1 - alpha)),
@@ -735,22 +922,33 @@ if (IS_BROWSER) {
 
   function pickWorstContrastColor(textColor, colors) {
     const usable = (colors || []).filter(Boolean);
-    if (!usable.length) return null;
+
+    if (!usable.length) {
+return null;
+}
+
     let worst = usable[0];
     let worstRatio = contrastRatio(textColor, worst);
+
     for (const color of usable.slice(1)) {
       const ratio = contrastRatio(textColor, color);
+
       if (ratio < worstRatio) {
         worst = color;
         worstRatio = ratio;
       }
     }
+
     return worst;
   }
 
   function firstCssUrl(value) {
     const match = String(value || '').match(/url\((?:"([^"]+)"|'([^']+)'|([^)]*))\)/i);
-    if (!match) return '';
+
+    if (!match) {
+return '';
+}
+
     return (match[1] || match[2] || match[3] || '').trim();
   }
 
@@ -759,24 +957,43 @@ if (IS_BROWSER) {
   }
 
   function parsePositionToken(token, container, painted) {
-    if (!token || token === 'center') return (container - painted) / 2;
-    if (token === 'left' || token === 'top') return 0;
-    if (token === 'right' || token === 'bottom') return container - painted;
+    if (!token || token === 'center') {
+return (container - painted) / 2;
+}
+
+    if (token === 'left' || token === 'top') {
+return 0;
+}
+
+    if (token === 'right' || token === 'bottom') {
+return container - painted;
+}
+
     if (/%$/.test(token)) {
       const pct = parseFloat(token) / 100;
+
       return (container - painted) * pct;
     }
-    if (/px$/.test(token)) return parseFloat(token) || 0;
+
+    if (/px$/.test(token)) {
+return parseFloat(token) || 0;
+}
+
     return (container - painted) / 2;
   }
 
   function parsePositionPair(positionValue) {
     const tokens = String(positionValue || '50% 50%').trim().split(/\s+/).filter(Boolean);
     const first = tokens[0] || '50%';
+
     if (tokens.length < 2) {
-      if (first === 'top' || first === 'bottom') return ['50%', first];
+      if (first === 'top' || first === 'bottom') {
+return ['50%', first];
+}
+
       return [first, '50%'];
     }
+
     return [first, tokens[1] || '50%'];
   }
 
@@ -797,16 +1014,26 @@ if (IS_BROWSER) {
       const parts = size.split(/\s+/);
       const widthToken = parts[0];
       const heightToken = parts[1] || 'auto';
-      if (/%$/.test(widthToken)) paintedWidth = containerRect.width * (parseFloat(widthToken) / 100);
-      else if (/px$/.test(widthToken)) paintedWidth = parseFloat(widthToken) || paintedWidth;
-      if (heightToken === 'auto') paintedHeight = paintedWidth * (intrinsicHeight / intrinsicWidth);
-      else if (/%$/.test(heightToken)) paintedHeight = containerRect.height * (parseFloat(heightToken) / 100);
-      else if (/px$/.test(heightToken)) paintedHeight = parseFloat(heightToken) || paintedHeight;
+
+      if (/%$/.test(widthToken)) {
+paintedWidth = containerRect.width * (parseFloat(widthToken) / 100);
+} else if (/px$/.test(widthToken)) {
+paintedWidth = parseFloat(widthToken) || paintedWidth;
+}
+
+      if (heightToken === 'auto') {
+paintedHeight = paintedWidth * (intrinsicHeight / intrinsicWidth);
+} else if (/%$/.test(heightToken)) {
+paintedHeight = containerRect.height * (parseFloat(heightToken) / 100);
+} else if (/px$/.test(heightToken)) {
+paintedHeight = parseFloat(heightToken) || paintedHeight;
+}
     }
 
     const [xToken, yToken] = parsePositionPair(positionValue);
     const positionX = parsePositionToken(xToken, containerRect.width, paintedWidth);
     const positionY = parsePositionToken(yToken, containerRect.height, paintedHeight);
+
     return {
       left: containerRect.left + positionX,
       top: containerRect.top + positionY,
@@ -827,6 +1054,7 @@ if (IS_BROWSER) {
     const fit = style.objectFit || 'fill';
     let paintedWidth = containerRect.width;
     let paintedHeight = containerRect.height;
+
     if (fit === 'contain' || fit === 'cover') {
       const scale = fit === 'cover'
         ? Math.max(containerRect.width / intrinsicWidth, containerRect.height / intrinsicHeight)
@@ -841,7 +1069,9 @@ if (IS_BROWSER) {
       paintedWidth = intrinsicWidth * containScale;
       paintedHeight = intrinsicHeight * containScale;
     }
+
     const [xToken, yToken] = parseObjectPosition(style.objectPosition);
+
     return {
       left: containerRect.left + parsePositionToken(xToken, containerRect.width, paintedWidth),
       top: containerRect.top + parsePositionToken(yToken, containerRect.height, paintedHeight),
@@ -861,6 +1091,7 @@ if (IS_BROWSER) {
     ) {
       return null;
     }
+
     return {
       x: Math.max(0, Math.min(paintedRect.intrinsicWidth - 1, ((point.x - paintedRect.left) / paintedRect.width) * paintedRect.intrinsicWidth)),
       y: Math.max(0, Math.min(paintedRect.intrinsicHeight - 1, ((point.y - paintedRect.top) / paintedRect.height) * paintedRect.intrinsicHeight)),
@@ -868,42 +1099,60 @@ if (IS_BROWSER) {
   }
 
   async function loadVisualContrastImage(src) {
-    if (!src) return null;
-    if (visualContrastImageCache.has(src)) return visualContrastImageCache.get(src);
+    if (!src) {
+return null;
+}
+
+    if (visualContrastImageCache.has(src)) {
+return visualContrastImageCache.get(src);
+}
+
     const promise = new Promise(resolve => {
       const img = new Image();
       let settled = false;
       const finish = value => {
-        if (settled) return;
+        if (settled) {
+return;
+}
+
         settled = true;
         clearTimeout(timer);
         resolve(value);
       };
       const timer = setTimeout(() => finish(null), 800);
+
       try {
         const absolute = new URL(src, location.href);
+
         if (absolute.origin !== location.origin && absolute.protocol !== 'data:' && absolute.protocol !== 'blob:') {
           img.crossOrigin = 'anonymous';
         }
       } catch {
         // Let the browser resolve unusual URLs itself.
       }
+
       img.onload = () => finish(img);
       img.onerror = () => finish(null);
       img.src = src;
     });
     visualContrastImageCache.set(src, promise);
+
     return promise;
   }
 
   function sampleDrawablePixel(drawable, sourcePoint) {
     if (visualContrastRasterCache.has(drawable)) {
       const cached = visualContrastRasterCache.get(drawable);
-      if (!cached || !cached.ctx) return { status: 'unresolved', reason: cached?.reason || 'image sample failed' };
+
+      if (!cached || !cached.ctx) {
+return { status: 'unresolved', reason: cached?.reason || 'image sample failed' };
+}
+
       try {
         const x = Math.max(0, Math.min(cached.width - 1, Math.floor(sourcePoint.x * cached.scaleX)));
         const y = Math.max(0, Math.min(cached.height - 1, Math.floor(sourcePoint.y * cached.scaleY)));
         const data = cached.ctx.getImageData(x, y, 1, 1).data;
+
         return {
           status: 'sampled',
           color: { r: data[0], g: data[1], b: data[2], a: data[3] / 255 },
@@ -924,7 +1173,11 @@ if (IS_BROWSER) {
     canvas.width = Math.max(1, Math.round(intrinsicWidth * scale));
     canvas.height = Math.max(1, Math.round(intrinsicHeight * scale));
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return { status: 'unresolved', reason: 'canvas unavailable' };
+
+    if (!ctx) {
+return { status: 'unresolved', reason: 'canvas unavailable' };
+}
+
     try {
       ctx.drawImage(drawable, 0, 0, canvas.width, canvas.height);
       const cached = {
@@ -938,6 +1191,7 @@ if (IS_BROWSER) {
       const x = Math.max(0, Math.min(cached.width - 1, Math.floor(sourcePoint.x * cached.scaleX)));
       const y = Math.max(0, Math.min(cached.height - 1, Math.floor(sourcePoint.y * cached.scaleY)));
       const data = ctx.getImageData(x, y, 1, 1).data;
+
       return {
         status: 'sampled',
         color: { r: data[0], g: data[1], b: data[2], a: data[3] / 255 },
@@ -945,6 +1199,7 @@ if (IS_BROWSER) {
     } catch (err) {
       const reason = /taint|cross-origin|Security/i.test(err?.message || '') ? 'tainted image' : 'image sample failed';
       visualContrastRasterCache.set(drawable, { ctx: null, reason });
+
       return {
         status: 'unresolved',
         reason,
@@ -955,14 +1210,23 @@ if (IS_BROWSER) {
   async function sampleCssBackground(el, style, point, textColor) {
     const rect = el.getBoundingClientRect();
     const bgImage = style.backgroundImage || '';
+
     if (bgImage && bgImage !== 'none') {
       if (/gradient/i.test(bgImage)) {
         const color = pickWorstContrastColor(textColor, parseGradientColors(bgImage));
-        if (color) return { status: 'sampled', color, method: 'analytic-gradient' };
+
+        if (color) {
+return { status: 'sampled', color, method: 'analytic-gradient' };
+}
       }
+
       if (/url\s*\(/i.test(bgImage)) {
         const img = await loadVisualContrastImage(firstCssUrl(bgImage));
-        if (!img) return { status: 'unresolved', reason: 'image unavailable' };
+
+        if (!img) {
+return { status: 'unresolved', reason: 'image unavailable' };
+}
+
         const paintedRect = resolvePaintedImageRect(
           rect,
           img,
@@ -970,14 +1234,27 @@ if (IS_BROWSER) {
           getLayerValue(style.backgroundPosition) || '50% 50%',
         );
         const sourcePoint = pointToImageSource(point, paintedRect);
-        if (!sourcePoint) return { status: 'unresolved', reason: 'point outside background image' };
+
+        if (!sourcePoint) {
+return { status: 'unresolved', reason: 'point outside background image' };
+}
+
         const sample = sampleDrawablePixel(img, sourcePoint);
-        if (sample.status === 'sampled') return { ...sample, method: 'canvas-background-image' };
+
+        if (sample.status === 'sampled') {
+return { ...sample, method: 'canvas-background-image' };
+}
+
         return sample;
       }
     }
+
     const bg = parseRgb(style.backgroundColor);
-    if (bg && bg.a > 0.05) return { status: 'sampled', color: bg, method: 'solid-background' };
+
+    if (bg && bg.a > 0.05) {
+return { status: 'sampled', color: bg, method: 'solid-background' };
+}
+
     return { status: 'unresolved', reason: 'no readable background' };
   }
 
@@ -986,21 +1263,34 @@ if (IS_BROWSER) {
     const style = getComputedStyle(img);
     const paintedRect = resolveObjectImageRect(rect, img, style);
     const sourcePoint = pointToImageSource(point, paintedRect);
-    if (!sourcePoint) return { status: 'unresolved', reason: 'point outside image' };
+
+    if (!sourcePoint) {
+return { status: 'unresolved', reason: 'point outside image' };
+}
+
     const sample = sampleDrawablePixel(img, sourcePoint);
-    if (sample.status === 'sampled') return { ...sample, method: 'canvas-img-underlay' };
+
+    if (sample.status === 'sampled') {
+return { ...sample, method: 'canvas-img-underlay' };
+}
 
     if (img.currentSrc || img.src) {
       const loaded = await loadVisualContrastImage(img.currentSrc || img.src);
+
       if (loaded) {
         const loadedRect = { ...paintedRect, intrinsicWidth: loaded.naturalWidth || loaded.width || paintedRect.intrinsicWidth, intrinsicHeight: loaded.naturalHeight || loaded.height || paintedRect.intrinsicHeight };
         const loadedPoint = pointToImageSource(point, loadedRect);
+
         if (loadedPoint) {
           const loadedSample = sampleDrawablePixel(loaded, loadedPoint);
-          if (loadedSample.status === 'sampled') return { ...loadedSample, method: 'canvas-img-underlay' };
+
+          if (loadedSample.status === 'sampled') {
+return { ...loadedSample, method: 'canvas-img-underlay' };
+}
         }
       }
     }
+
     return sample;
   }
 
@@ -1014,11 +1304,15 @@ if (IS_BROWSER) {
       ? [rect.top + rect.height / 2]
       : [rect.top + insetY, rect.top + rect.height / 2, rect.bottom - insetY];
     const points = [];
+
     for (const y of ys) {
       for (const x of xs) {
-        if (x >= 0 && y >= 0 && x <= window.innerWidth && y <= window.innerHeight) points.push({ x, y });
+        if (x >= 0 && y >= 0 && x <= window.innerWidth && y <= window.innerHeight) {
+points.push({ x, y });
+}
       }
     }
+
     return points;
   }
 
@@ -1026,6 +1320,7 @@ if (IS_BROWSER) {
     if (depth > 8) {
       return { status: 'unresolved', reason: 'background stack too deep' };
     }
+
     const stack = typeof document.elementsFromPoint === 'function'
       ? document.elementsFromPoint(point.x, point.y)
       : [];
@@ -1034,15 +1329,27 @@ if (IS_BROWSER) {
     const unresolved = [];
 
     for (const node of nodes) {
-      if (!node || node.nodeType !== 1) continue;
-      if (node.closest?.('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) continue;
+      if (!node || node.nodeType !== 1) {
+continue;
+}
+
+      if (node.closest?.('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) {
+continue;
+}
+
       const tag = node.tagName?.toLowerCase();
+
       if (tag === 'img') {
         const sample = await sampleImageElement(node, point);
-        if (sample.status === 'sampled') return sample;
+
+        if (sample.status === 'sampled') {
+return sample;
+}
+
         unresolved.push(sample.reason);
         continue;
       }
+
       if (tag === 'canvas' || tag === 'video') {
         const rect = node.getBoundingClientRect();
         const sourcePoint = pointToImageSource(point, {
@@ -1053,18 +1360,30 @@ if (IS_BROWSER) {
           intrinsicWidth: node.width || node.videoWidth || rect.width,
           intrinsicHeight: node.height || node.videoHeight || rect.height,
         });
+
         if (sourcePoint) {
           const sample = sampleDrawablePixel(node, sourcePoint);
-          if (sample.status === 'sampled') return { ...sample, method: `canvas-${tag}-underlay` };
+
+          if (sample.status === 'sampled') {
+return { ...sample, method: `canvas-${tag}-underlay` };
+}
+
           unresolved.push(sample.reason);
         }
+
         continue;
       }
+
       const style = getComputedStyle(node);
       const sample = await sampleCssBackground(node, style, point, textColor);
+
       if (sample.status === 'sampled') {
-        if (!sample.color || sample.color.a == null || sample.color.a >= 0.95) return sample;
+        if (!sample.color || sample.color.a == null || sample.color.a >= 0.95) {
+return sample;
+}
+
         const under = await sampleVisualBackgroundAtPoint(node.parentElement || document.body, point, textColor, depth + 1);
+
         if (under.status === 'sampled') {
           return {
             status: 'sampled',
@@ -1072,8 +1391,10 @@ if (IS_BROWSER) {
             method: `${sample.method}+alpha`,
           };
         }
+
         return sample;
       }
+
       unresolved.push(sample.reason);
     }
 
@@ -1085,12 +1406,16 @@ if (IS_BROWSER) {
 
   async function analyzeVisualContrastCandidate(candidate) {
     let el;
+
     try {
       el = document.querySelector(candidate.selector);
     } catch {
       return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'stale selector' };
     }
-    if (!el) return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'missing element' };
+
+    if (!el) {
+return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'missing element' };
+}
 
     const blockingReason = (candidate.reasons || []).find(reason =>
       reason === 'background-clip text' ||
@@ -1100,20 +1425,26 @@ if (IS_BROWSER) {
       reason === 'opacity stack' ||
       reason === 'text shadow'
     );
+
     if (blockingReason) {
       return { ...candidate, status: 'unresolved', confidence: 'none', reason: `${blockingReason} needs screenshot pixels` };
     }
 
     const style = getComputedStyle(el);
     const textColor = parseRgb(style.color) || candidate.textColor;
-    if (!textColor) return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'unreadable text color' };
+
+    if (!textColor) {
+return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'unreadable text color' };
+}
 
     const rect = getDirectTextRect(el) || el.getBoundingClientRect();
+
     if (!rect || rect.width < 4 || rect.height < 4) {
       return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'missing text rect' };
     }
 
     const points = textSamplePoints(rect);
+
     if (points.length === 0) {
       return { ...candidate, status: 'unresolved', confidence: 'none', reason: 'text outside viewport' };
     }
@@ -1121,15 +1452,21 @@ if (IS_BROWSER) {
     const ratios = [];
     const methods = new Set();
     const unresolved = [];
+
     for (const point of points) {
       const sample = await sampleVisualBackgroundAtPoint(el, point, textColor);
+
       if (sample.status !== 'sampled' || !sample.color) {
         unresolved.push(sample.reason);
         continue;
       }
+
       const fg = blendRgba(textColor, sample.color);
       ratios.push(contrastRatio(fg, sample.color));
-      if (sample.method) methods.add(sample.method);
+
+      if (sample.method) {
+methods.add(sample.method);
+}
     }
 
     if (ratios.length < Math.min(3, points.length)) {
@@ -1150,6 +1487,7 @@ if (IS_BROWSER) {
     const method = [...methods].sort().join(', ') || 'browser-visual';
     const textLabel = candidate.text ? ` "${candidate.text}"` : '';
     const detail = `browser contrast ${measuredRatio.toFixed(1)}:1 median ${medianRatio.toFixed(1)}:1 (need ${candidate.threshold}:1) via ${method}${textLabel}`;
+
     return {
       ...candidate,
       status,
@@ -1173,36 +1511,50 @@ if (IS_BROWSER) {
     const results = [];
     const shouldScrollOffscreen = options.scrollOffscreen === true;
     const restoreScroll = { x: window.scrollX, y: window.scrollY };
+
     for (const candidate of candidates) {
       if (shouldScrollOffscreen && (window.scrollX !== restoreScroll.x || window.scrollY !== restoreScroll.y)) {
         window.scrollTo(restoreScroll.x, restoreScroll.y);
         await waitForVisualPaint();
       }
+
       let result = await analyzeVisualContrastCandidate(candidate);
+
       if (shouldScrollOffscreen && result.status === 'unresolved' && result.reason === 'text outside viewport') {
         let el = null;
+
         try {
           el = document.querySelector(candidate.selector);
         } catch {
           el = null;
         }
+
         if (el && typeof el.scrollIntoView === 'function') {
           el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
           await waitForVisualPaint();
           result = await analyzeVisualContrastCandidate(candidate);
         }
       }
+
       results.push(result);
     }
+
     if (shouldScrollOffscreen && (window.scrollX !== restoreScroll.x || window.scrollY !== restoreScroll.y)) {
       window.scrollTo(restoreScroll.x, restoreScroll.y);
     }
+
     return results;
   }
 
   function isElementHidden(el) {
-    if (!el || el === document.body || el === document.documentElement) return false;
-    if (typeof el.checkVisibility === 'function') return !el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
+    if (!el || el === document.body || el === document.documentElement) {
+return false;
+}
+
+    if (typeof el.checkVisibility === 'function') {
+return !el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
+}
+
     // Fallback: zero size or no offsetParent (covers display:none and detached subtrees)
     return el.offsetWidth === 0 && el.offsetHeight === 0;
   }
@@ -1217,6 +1569,7 @@ if (IS_BROWSER) {
       isHidden: isElementHidden(el),
       findings: findings.map(f => {
         const ap = ANTIPATTERNS.find(a => a.id === (f.type || f.id));
+
         return {
           type: f.type || f.id,
           category: ap ? ap.category : 'quality',
@@ -1232,26 +1585,37 @@ if (IS_BROWSER) {
   const printSummary = function(allFindings) {
     if (allFindings.length === 0) {
       console.log('%c[impeccable] No anti-patterns found.', 'color: #22c55e; font-weight: bold');
+
       return;
     }
+
     console.group(
       `%c[impeccable] ${allFindings.length} anti-pattern${allFindings.length === 1 ? '' : 's'} found`,
       'color: oklch(84% 0.19 80.46); font-weight: bold'
     );
+
     for (const { el, findings } of allFindings) {
       for (const f of findings) {
         console.log(`%c${f.type || f.id}%c ${f.detail || f.snippet}`,
           'color: oklch(84% 0.19 80.46); font-weight: bold', 'color: inherit', el);
       }
     }
+
     console.groupEnd();
   };
 
   function addBrowserFindings(groupMap, el, findings) {
-    if (!findings || findings.length === 0) return;
+    if (!findings || findings.length === 0) {
+return;
+}
+
     const existing = groupMap.get(el);
-    if (existing) existing.push(...findings);
-    else groupMap.set(el, [...findings]);
+
+    if (existing) {
+existing.push(...findings);
+} else {
+groupMap.set(el, [...findings]);
+}
   }
 
   function browserFindingsFromMap(groupMap) {
@@ -1269,15 +1633,27 @@ if (IS_BROWSER) {
 
     for (const el of document.querySelectorAll('*')) {
       // Skip impeccable's own elements and any descendants (overlays, labels, banner, nav buttons)
-      if (el.closest('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) continue;
+      if (el.closest('.impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip')) {
+continue;
+}
+
       // Skip browser extension elements (Claude, etc.)
       const elId = el.id || '';
-      if (elId.startsWith('claude-') || elId.startsWith('cic-')) continue;
+
+      if (elId.startsWith('claude-') || elId.startsWith('cic-')) {
+continue;
+}
+
       // Skip the impeccable live-mode overlay (highlight, tooltip, bar, picker, toast).
       // These are inspector chrome, not part of the user's design.
-      if (el.closest('[id^="impeccable-live-"]')) continue;
+      if (el.closest('[id^="impeccable-live-"]')) {
+continue;
+}
+
       // Skip html/body -- page-level findings go in the banner, not a full-page overlay
-      if (el === document.body || el === document.documentElement) continue;
+      if (el === document.body || el === document.documentElement) {
+continue;
+}
 
       const findings = [
         ...checkElementBordersDOM(el).map(f => ({ type: f.id, detail: f.snippet })),
@@ -1301,6 +1677,7 @@ if (IS_BROWSER) {
       const eyebrowFindings = checkElementHeroEyebrowDOM(el)
         .map(f => ({ type: f.id, detail: f.snippet }))
         .filter(f => _ruleOk(f.type));
+
       if (eyebrowFindings.length > 0 && el.previousElementSibling) {
         addBrowserFindings(groupMap, el.previousElementSibling, eyebrowFindings);
       }
@@ -1309,6 +1686,7 @@ if (IS_BROWSER) {
     const pageLevelFindings = [];
 
     const typoFindings = checkTypography().filter(f => _ruleOk(f.type));
+
     if (typoFindings.length > 0) {
       pageLevelFindings.push(...typoFindings);
       addBrowserFindings(groupMap, document.body, typoFindings);
@@ -1317,12 +1695,14 @@ if (IS_BROWSER) {
     const sectionKickerFindings = checkRepeatedSectionKickersDOM()
       .map(f => ({ type: f.id, detail: f.snippet }))
       .filter(f => _ruleOk(f.type));
+
     if (sectionKickerFindings.length > 0) {
       pageLevelFindings.push(...sectionKickerFindings);
       addBrowserFindings(groupMap, document.body, sectionKickerFindings);
     }
 
     const layoutFindings = checkLayout().filter(f => _ruleOk(f.type));
+
     for (const f of layoutFindings) {
       const el = f.el || document.body;
       addBrowserFindings(groupMap, el, [{ type: f.type, detail: f.detail || f.snippet }]);
@@ -1330,6 +1710,7 @@ if (IS_BROWSER) {
 
     // Page-level quality checks (headings, etc.)
     const qualityFindings = checkPageQualityDOM().filter(f => _ruleOk(f.type));
+
     if (qualityFindings.length > 0) {
       pageLevelFindings.push(...qualityFindings);
       addBrowserFindings(groupMap, document.body, qualityFindings);
@@ -1338,6 +1719,7 @@ if (IS_BROWSER) {
     const creamFindings = checkCreamPalette(document)
       .map(f => ({ type: f.id, detail: f.snippet }))
       .filter(f => _ruleOk(f.type));
+
     if (creamFindings.length > 0) {
       pageLevelFindings.push(...creamFindings);
       addBrowserFindings(groupMap, document.body, creamFindings);
@@ -1348,10 +1730,13 @@ if (IS_BROWSER) {
     // regex scan, so the inspector's own inline styles (transitions on top/
     // left/width/height, etc.) don't register as page anti-patterns.
     const docClone = document.documentElement.cloneNode(true);
+
     for (const node of docClone.querySelectorAll('[id^="impeccable-live-"]')) {
       node.remove();
     }
+
     const htmlPatternFindings = checkHtmlPatterns(docClone.outerHTML);
+
     if (htmlPatternFindings.length > 0) {
       const mapped = htmlPatternFindings.map(f => ({ type: f.id, detail: f.snippet })).filter(f => _ruleOk(f.type));
       pageLevelFindings.push(...mapped);
@@ -1378,6 +1763,7 @@ if (IS_BROWSER) {
         : typeof config.visualContrastScrollOffscreen === 'boolean'
           ? config.visualContrastScrollOffscreen
           : false;
+
     return {
       ...options,
       maxCandidates: Number.isFinite(options.visualContrastMaxCandidates)
@@ -1400,11 +1786,17 @@ if (IS_BROWSER) {
   function rememberVisualContrastAnalysis(result) {
     if (!result?.selector) {
       lastVisualContrastAnalyses.push(result);
+
       return;
     }
+
     const idx = lastVisualContrastAnalyses.findIndex(item => item.selector === result.selector);
-    if (idx >= 0) lastVisualContrastAnalyses[idx] = result;
-    else lastVisualContrastAnalyses.push(result);
+
+    if (idx >= 0) {
+lastVisualContrastAnalyses[idx] = result;
+} else {
+lastVisualContrastAnalyses.push(result);
+}
   }
 
   function disconnectLazyVisualContrastObserver() {
@@ -1412,33 +1804,51 @@ if (IS_BROWSER) {
       lazyVisualContrastObserver.disconnect();
       lazyVisualContrastObserver = null;
     }
+
     lazyVisualContrastPending = new WeakMap();
   }
 
   function addVisualContrastResult(groupMap, result, options = {}) {
-    if (result.status !== 'fail' || !result.finding || !result.selector) return false;
+    if (result.status !== 'fail' || !result.finding || !result.selector) {
+return false;
+}
+
     let el = null;
+
     try {
       el = document.querySelector(result.selector);
     } catch {
       el = null;
     }
-    if (!el) return false;
+
+    if (!el) {
+return false;
+}
+
     const findingType = result.finding.type || result.finding.id || 'low-contrast';
     const existing = groupMap.get(el) || [];
-    if (existing.some(f => (f.type || f.id) === findingType)) return false;
+
+    if (existing.some(f => (f.type || f.id) === findingType)) {
+return false;
+}
+
     addBrowserFindings(groupMap, el, [{
       type: findingType,
       detail: result.finding.detail || result.finding.snippet,
     }]);
+
     if (options.decorate && el !== document.body && el !== document.documentElement) {
       highlight(el, groupMap.get(el) || []);
     }
+
     return true;
   }
 
   function postSerializedFindings(groupMap) {
-    if (!EXTENSION_MODE) return;
+    if (!EXTENSION_MODE) {
+return;
+}
+
     const allFindings = browserFindingsFromMap(groupMap);
     window.postMessage({
       source: 'impeccable-results',
@@ -1448,7 +1858,10 @@ if (IS_BROWSER) {
   }
 
   function postExtensionError(err) {
-    if (!EXTENSION_MODE) return;
+    if (!EXTENSION_MODE) {
+return;
+}
+
     window.postMessage({
       source: 'impeccable-error',
       message: err?.message || String(err),
@@ -1462,6 +1875,7 @@ if (IS_BROWSER) {
         message: err?.message || String(err),
       },
     }));
+
     if (EXTENSION_MODE) {
       postExtensionError(err);
     } else {
@@ -1471,31 +1885,53 @@ if (IS_BROWSER) {
 
   function scheduleLazyVisualContrast(groupMap, analyses, options = {}, runtime = {}) {
     disconnectLazyVisualContrastObserver();
-    if (options.visualContrastLazy === false || options.scrollOffscreen !== false) return;
-    if (typeof IntersectionObserver === 'undefined') return;
+
+    if (options.visualContrastLazy === false || options.scrollOffscreen !== false) {
+return;
+}
+
+    if (typeof IntersectionObserver === 'undefined') {
+return;
+}
+
     const unresolved = (analyses || []).filter(result =>
       result?.status === 'unresolved' &&
       result.reason === 'text outside viewport' &&
       result.selector
     );
-    if (unresolved.length === 0) return;
+
+    if (unresolved.length === 0) {
+return;
+}
+
     const generation = runtime.generation || scanGeneration;
 
     lazyVisualContrastObserver = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
+        if (!entry.isIntersecting) {
+continue;
+}
+
         const el = entry.target;
         const candidate = lazyVisualContrastPending.get(el);
-        if (!candidate || lazyVisualContrastResolving.has(el)) continue;
+
+        if (!candidate || lazyVisualContrastResolving.has(el)) {
+continue;
+}
+
         lazyVisualContrastObserver?.unobserve(el);
         lazyVisualContrastPending.delete(el);
         lazyVisualContrastResolving.add(el);
         waitForVisualPaint()
           .then(() => analyzeVisualContrastCandidate(candidate))
           .then(result => {
-            if (generation !== scanGeneration) return;
+            if (generation !== scanGeneration) {
+return;
+}
+
             rememberVisualContrastAnalysis(result);
             const added = addVisualContrastResult(groupMap, result, { decorate: true });
+
             if (added) {
               postSerializedFindings(groupMap);
               window.dispatchEvent(new CustomEvent('impeccable-visual-contrast-resolved', {
@@ -1518,12 +1954,17 @@ if (IS_BROWSER) {
 
     for (const candidate of unresolved) {
       let el = null;
+
       try {
         el = document.querySelector(candidate.selector);
       } catch {
         el = null;
       }
-      if (!el) continue;
+
+      if (!el) {
+continue;
+}
+
       lazyVisualContrastPending.set(el, candidate);
       lazyVisualContrastObserver.observe(el);
     }
@@ -1533,22 +1974,34 @@ if (IS_BROWSER) {
     if (!shouldRunVisualContrast(options)) {
       lastVisualContrastAnalyses = [];
       disconnectLazyVisualContrastObserver();
+
       return [];
     }
+
     const resolvedOptions = visualContrastOptions(options);
     const analyses = await analyzeVisualContrast(resolvedOptions);
-    if (runtime.generation && runtime.generation !== scanGeneration) return analyses;
+
+    if (runtime.generation && runtime.generation !== scanGeneration) {
+return analyses;
+}
+
     lastVisualContrastAnalyses = analyses;
+
     for (const result of analyses) {
       addVisualContrastResult(groupMap, result, { decorate: runtime.decorate });
     }
-    if (runtime.decorate || runtime.scheduleLazy) scheduleLazyVisualContrast(groupMap, analyses, resolvedOptions, runtime);
+
+    if (runtime.decorate || runtime.scheduleLazy) {
+scheduleLazyVisualContrast(groupMap, analyses, resolvedOptions, runtime);
+}
+
     return analyses;
   }
 
   async function collectBrowserFindingsAsync(options = {}, runtime = {}) {
     const collected = collectBrowserFindings();
     await addVisualContrastFindings(collected.groupMap, options, runtime);
+
     return {
       ...collected,
       allFindings: browserFindingsFromMap(collected.groupMap),
@@ -1559,7 +2012,11 @@ if (IS_BROWSER) {
   function clearOverlays() {
     scanGeneration += 1;
     disconnectLazyVisualContrastObserver();
-    for (const o of [...overlays]) detachOverlay(o);
+
+    for (const o of [...overlays]) {
+detachOverlay(o);
+}
+
     overlays.length = 0;
     visibilityObserver.disconnect();
     overlayIndex = 0;
@@ -1569,7 +2026,10 @@ if (IS_BROWSER) {
     const { allFindings, pageLevelFindings } = collected;
 
     for (const { el, findings } of allFindings) {
-      if (el === document.body || el === document.documentElement) continue;
+      if (el === document.body || el === document.documentElement) {
+continue;
+}
+
       highlight(el, findings);
     }
 
@@ -1577,7 +2037,9 @@ if (IS_BROWSER) {
       showPageBanner(pageLevelFindings);
     }
 
-    if (!EXTENSION_MODE) printSummary(allFindings);
+    if (!EXTENSION_MODE) {
+printSummary(allFindings);
+}
 
     // In extension mode, post serialized results for the DevTools panel
     if (EXTENSION_MODE) {
@@ -1589,7 +2051,9 @@ if (IS_BROWSER) {
     }
 
     // After this scan completes, all subsequent reveals are instant (no stagger, no animation)
-    setTimeout(() => { firstScanDone = true; }, 1000);
+    setTimeout(() => {
+ firstScanDone = true; 
+}, 1000);
 
     return allFindings;
   }
@@ -1600,82 +2064,116 @@ if (IS_BROWSER) {
     const generation = scanGeneration;
     const collected = collectBrowserFindings();
     const allFindings = renderBrowserFindings(collected);
+
     if (shouldRunVisualContrast(options)) {
       addVisualContrastFindings(collected.groupMap, options, { decorate: true, generation })
         .then(() => {
-          if (generation === scanGeneration) postSerializedFindings(collected.groupMap);
+          if (generation === scanGeneration) {
+postSerializedFindings(collected.groupMap);
+}
         })
         .catch(err => {
           reportVisualContrastError(err);
         });
     }
+
     return allFindings;
   };
 
   const scanAsync = async function(options = {}) {
     clearOverlays();
     const generation = scanGeneration;
+
     if (shouldRunVisualContrast(options)) {
       const collected = await collectBrowserFindingsAsync(options, { generation, scheduleLazy: true });
-      if (generation !== scanGeneration) return [];
+
+      if (generation !== scanGeneration) {
+return [];
+}
+
       return renderBrowserFindings(collected);
     }
+
     lastVisualContrastAnalyses = [];
+
     return renderBrowserFindings(collectBrowserFindings());
   };
 
   const detect = function(options = {}) {
     lastVisualContrastAnalyses = [];
     const { allFindings } = collectBrowserFindings();
+
     return options.serialize === false ? allFindings : serializeFindings(allFindings);
   };
 
   const detectAsync = async function(options = {}) {
     if (shouldRunVisualContrast(options)) {
       const { allFindings } = await collectBrowserFindingsAsync(options);
+
       return options.serialize === false ? allFindings : serializeFindings(allFindings);
     }
+
     lastVisualContrastAnalyses = [];
     const { allFindings } = collectBrowserFindings();
+
     return options.serialize === false ? allFindings : serializeFindings(allFindings);
   };
 
   if (EXTENSION_MODE) {
     // Extension mode: listen for commands, don't auto-scan
     window.addEventListener('message', (e) => {
-      if (e.source !== window || !e.data || e.data.source !== 'impeccable-command') return;
+      if (e.source !== window || !e.data || e.data.source !== 'impeccable-command') {
+return;
+}
+
       if (e.data.action === 'scan') {
-        if (e.data.config) window.__IMPECCABLE_CONFIG__ = e.data.config;
+        if (e.data.config) {
+window.__IMPECCABLE_CONFIG__ = e.data.config;
+}
+
         try {
           scan(e.data.config || {});
         } catch (err) {
           postExtensionError(err);
         }
       }
+
       if (e.data.action === 'toggle-overlays') {
         const visible = !document.body.classList.contains('impeccable-hidden');
         document.body.classList.toggle('impeccable-hidden', visible);
         window.postMessage({ source: 'impeccable-overlays-toggled', visible: !visible }, '*');
       }
+
       if (e.data.action === 'remove') {
         clearOverlays();
         styleEl.remove();
-        if (spotlightBackdrop) { spotlightBackdrop.remove(); spotlightBackdrop = null; }
+
+        if (spotlightBackdrop) {
+ spotlightBackdrop.remove(); spotlightBackdrop = null; 
+}
+
         document.body.classList.remove('impeccable-hidden');
       }
+
       if (e.data.action === 'highlight') {
         try {
           const target = e.data.selector ? document.querySelector(e.data.selector) : null;
+
           if (target) {
             // Scroll first so positionOverlay reads the post-scroll rect
             if (!isInViewport(target) && target.scrollIntoView) {
               target.scrollIntoView({ behavior: 'instant', block: 'center' });
             }
+
             for (const o of overlays) {
-              if (o.classList.contains('impeccable-banner')) continue;
+              if (o.classList.contains('impeccable-banner')) {
+continue;
+}
+
               const isMatch = o._targetEl === target;
               o.classList.toggle('impeccable-spotlight', isMatch);
               o.classList.toggle('impeccable-spotlight-dimmed', !isMatch);
+
               if (isMatch) {
                 // Force the matching overlay visible immediately, don't wait for IntersectionObserver
                 o.style.display = '';
@@ -1685,12 +2183,15 @@ if (IS_BROWSER) {
                 positionOverlay(o);
               }
             }
+
             showSpotlight(target);
           }
         } catch { /* invalid selector */ }
       }
+
       if (e.data.action === 'unhighlight') {
         hideSpotlight();
+
         for (const o of overlays) {
           o.classList.remove('impeccable-spotlight');
           o.classList.remove('impeccable-spotlight-dimmed');
@@ -1707,6 +2208,7 @@ if (IS_BROWSER) {
           console.warn('[impeccable] scan failed', err);
         }
       };
+
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => setTimeout(runAutoScan, 100));
       } else {

@@ -8,6 +8,7 @@ import {
   UserSquare2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,15 +26,15 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
-const employeeItems = [
-  { title: 'Staff Profiles & Roles', href: '/employee/staff', icon: UserSquare2 },
-  { title: 'Attendance & Clock In/Out', href: '/employee/attendance', icon: Clock },
-  { title: 'Performance Metrics', href: '/employee/performance', icon: Gauge },
-  { title: 'Leave & Absence', href: '/employee/leave', icon: CalendarCheck },
-];
-
 export function NavEmployeeManagement() {
+  const { t } = useTranslation();
   const { isCurrentUrl } = useCurrentUrl();
+  const employeeItems = [
+    { title: t('nav.employee.staff'), href: '/employee/staff', icon: UserSquare2 },
+    { title: t('nav.employee.attendance'), href: '/employee/attendance', icon: Clock },
+    { title: t('nav.employee.performance'), href: '/employee/performance', icon: Gauge },
+    { title: t('nav.employee.leave'), href: '/employee/leave', icon: CalendarCheck },
+  ];
   const [open, setOpen] = useState(
     employeeItems.some((item) => isCurrentUrl(item.href)),
   );
@@ -44,7 +45,7 @@ export function NavEmployeeManagement() {
         <SidebarGroupLabel asChild>
           <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2">
             <Users className="size-4" />
-            <span className="flex-1 text-left text-xs font-medium">Employee Management</span>
+            <span className="flex-1 text-left text-xs font-medium">{t('nav.employee.label')}</span>
             <ChevronDown className="size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>

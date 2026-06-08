@@ -13,17 +13,15 @@
  *   node <scripts_path>/live-server.mjs --help
  */
 
-import http from 'node:http';
-import { randomUUID } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
-import path from 'node:path';
+import http from 'node:http';
 import net from 'node:net';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseDesignMd } from './design-parser.mjs';
 import { resolveContextDir } from './context.mjs';
-import { createLiveSessionStore } from './live-session-store.mjs';
-import { validateEvent } from './live-event-validation.mjs';
+import { parseDesignMd } from './design-parser.mjs';
 import {
   getDesignSidecarPath,
   getLiveDir,
@@ -33,6 +31,9 @@ import {
   resolveDesignSidecarPath,
   writeLiveServerInfo,
 } from './impeccable-paths.mjs';
+import { commitManualEdits } from './live-commit-manual-edits.mjs';
+import { validateEvent } from './live-event-validation.mjs';
+import { buildManualEditEvidence } from './live-manual-edit-evidence.mjs';
 import {
   countByPage as countPendingByPage,
   readBuffer as readManualEditsBuffer,
@@ -40,8 +41,7 @@ import {
   stageEntry as stageManualEditEntry,
   truncateBuffer as truncateManualEditsBuffer,
 } from './live-manual-edits-buffer.mjs';
-import { buildManualEditEvidence } from './live-manual-edit-evidence.mjs';
-import { commitManualEdits } from './live-commit-manual-edits.mjs';
+import { createLiveSessionStore } from './live-session-store.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // PRODUCT.md / DESIGN.md live wherever context.mjs resolves. The generated
@@ -106,23 +106,41 @@ const MANUAL_APPLY_COMPACT_NEARBY_LIMIT = 4;
 const DEBUG_MANUAL_EDIT_EVENTS = /^(1|true|yes)$/i.test(process.env.IMPECCABLE_LIVE_DEBUG_EVENTS || '');
 
 function tombstoneTimedOutApplyId(eventId, details = {}) {
-  if (!eventId) return;
+  if (!eventId) {
+return;
+}
+
   state.timedOutApplyIds.set(eventId, details);
-  if (state.timedOutApplyIds.size <= 200) return;
+
+  if (state.timedOutApplyIds.size <= 200) {
+return;
+}
+
   const oldest = state.timedOutApplyIds.keys().next().value;
   state.timedOutApplyIds.delete(oldest);
 }
 
 function chatAgentLikelyActive() {
-  if (state.pendingPolls.length > 0) return true;
-  if (!state.lastPollAt) return false;
+  if (state.pendingPolls.length > 0) {
+return true;
+}
+
+  if (!state.lastPollAt) {
+return false;
+}
+
   return Date.now() - state.lastPollAt < CHAT_POLL_FRESHNESS_MS;
 }
 
 function manualEditApplyChunkSize(env = process.env) {
   const raw = Number(env.IMPECCABLE_LIVE_MANUAL_EDIT_CHUNK_SIZE);
-  if (!Number.isFinite(raw)) return DEFAULT_MANUAL_EDIT_APPLY_CHUNK_SIZE;
+
+  if (!Number.isFinite(raw)) {
+return DEFAULT_MANUAL_EDIT_APPLY_CHUNK_SIZE;
+}
+
   const size = Math.trunc(raw);
+
   return Math.max(MIN_MANUAL_EDIT_APPLY_CHUNK_SIZE, Math.min(MAX_MANUAL_EDIT_APPLY_CHUNK_SIZE, size));
 }
 
@@ -131,7 +149,11 @@ function countManualApplyOps(entriesOrBatch) {
     ? entriesOrBatch
     : Array.isArray(entriesOrBatch?.entries) ? entriesOrBatch.entries : [];
   let count = 0;
-  for (const entry of entries) count += Array.isArray(entry.ops) ? entry.ops.length : 0;
+
+  for (const entry of entries) {
+count += Array.isArray(entry.ops) ? entry.ops.length : 0;
+}
+
   return count;
 }
 
@@ -148,8 +170,15 @@ function pushApplyEventAndWait(batch, pageUrl, chunk = null, repair = null) {
     schemaVersion: 1,
     deadlineMs: APPLY_EVENT_SOFT_DEADLINE_MS,
   };
-  if (chunk) event.chunk = chunk;
-  if (repair) event.repair = repair;
+
+  if (chunk) {
+event.chunk = chunk;
+}
+
+  if (repair) {
+event.repair = repair;
+}
+
   const rollbackSnapshot = snapshotApplyEventFiles(batch);
   recordManualEditActivity('manual_edit_apply_dispatched', {
     id: eventId,
@@ -160,6 +189,7 @@ function pushApplyEventAndWait(batch, pageUrl, chunk = null, repair = null) {
     opCount: countManualApplyOps(batch),
     fileCount: collectManualApplyFiles(batch).length,
   });
+
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       state.pendingApplyDeferreds.delete(eventId);
@@ -185,6 +215,7 @@ function writeManualApplyEvidence(eventId, batch) {
   fs.mkdirSync(dir, { recursive: true });
   const evidencePath = path.join(dir, `${eventId}.json`);
   fs.writeFileSync(evidencePath, JSON.stringify(batch, null, 2) + '\n', 'utf-8');
+
   return evidencePath;
 }
 
@@ -193,20 +224,35 @@ function manualApplyEvidenceDir(cwd = process.cwd()) {
 }
 
 function normalizeManualApplyEvidencePath(evidencePath, cwd = process.cwd()) {
-  if (!evidencePath || typeof evidencePath !== 'string') return null;
+  if (!evidencePath || typeof evidencePath !== 'string') {
+return null;
+}
+
   const fullPath = path.isAbsolute(evidencePath) ? evidencePath : path.resolve(cwd, evidencePath);
   const evidenceDir = manualApplyEvidenceDir(cwd);
   const relative = path.relative(evidenceDir, fullPath);
-  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return null;
-  if (path.extname(relative) !== '.json') return null;
+
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+return null;
+}
+
+  if (path.extname(relative) !== '.json') {
+return null;
+}
+
   return fullPath;
 }
 
 function removeManualApplyEvidence(evidencePath, cwd = process.cwd()) {
   const fullPath = normalizeManualApplyEvidencePath(evidencePath, cwd);
-  if (!fullPath) return false;
+
+  if (!fullPath) {
+return false;
+}
+
   try {
     fs.unlinkSync(fullPath);
+
     return true;
   } catch {
     return false;
@@ -217,22 +263,44 @@ function referencedManualApplyEvidencePaths(cwd = process.cwd()) {
   const referenced = new Set();
   const add = (event) => {
     const fullPath = normalizeManualApplyEvidencePath(event?.evidencePath, cwd);
-    if (fullPath) referenced.add(fullPath);
+
+    if (fullPath) {
+referenced.add(fullPath);
+}
   };
-  for (const entry of state.pendingEvents) add(entry.event);
-  for (const deferred of state.pendingApplyDeferreds.values()) add(deferred.event);
+
+  for (const entry of state.pendingEvents) {
+add(entry.event);
+}
+
+  for (const deferred of state.pendingApplyDeferreds.values()) {
+add(deferred.event);
+}
+
   return referenced;
 }
 
 function pruneStaleManualApplyEvidence(cwd = process.cwd()) {
   const dir = manualApplyEvidenceDir(cwd);
-  if (!fs.existsSync(dir)) return [];
+
+  if (!fs.existsSync(dir)) {
+return [];
+}
+
   const referenced = referencedManualApplyEvidencePaths(cwd);
   const removed = [];
+
   for (const name of fs.readdirSync(dir)) {
-    if (!name.endsWith('.json')) continue;
+    if (!name.endsWith('.json')) {
+continue;
+}
+
     const fullPath = path.join(dir, name);
-    if (referenced.has(fullPath)) continue;
+
+    if (referenced.has(fullPath)) {
+continue;
+}
+
     try {
       fs.unlinkSync(fullPath);
       removed.push(fullPath);
@@ -241,12 +309,14 @@ function pruneStaleManualApplyEvidence(cwd = process.cwd()) {
       // on deleting these files.
     }
   }
+
   return removed;
 }
 
 function compactManualApplyBatch(batch = {}) {
   const entries = (batch.entries || []).map(compactManualApplyEntry);
   const candidates = compactManualApplyCandidates(batch.candidates || []);
+
   return {
     version: batch.version,
     pageUrl: batch.pageUrl || null,
@@ -287,9 +357,16 @@ function compactManualApplySourceMatches(matches, limit) {
 }
 
 function compactManualApplySourceMatch(match) {
-  if (!match || typeof match !== 'object') return null;
+  if (!match || typeof match !== 'object') {
+return null;
+}
+
   const file = match.relativeFile || match.file;
-  if (!file && !match.line) return null;
+
+  if (!file && !match.line) {
+return null;
+}
+
   return {
     file: summarizeManualLogFile(file),
     line: match.line || null,
@@ -329,7 +406,10 @@ function compactManualApplyOp(op = {}) {
 }
 
 function compactManualApplyContext(value) {
-  if (!value || typeof value !== 'object') return null;
+  if (!value || typeof value !== 'object') {
+return null;
+}
+
   return {
     ref: value.ref,
     tagName: value.tagName || value.tag || null,
@@ -351,17 +431,28 @@ function compactNearbyManualEditTexts(items) {
 }
 
 function truncateManualApplyText(value, max) {
-  if (typeof value !== 'string') return value || null;
+  if (typeof value !== 'string') {
+return value || null;
+}
+
   return value.length > max ? value.slice(0, max) : value;
 }
 
 async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
   const repair = context?.repair || batch?.repair || null;
-  if (repair) return pushApplyEventAndWait(batch, pageUrl, null, repair);
+
+  if (repair) {
+return pushApplyEventAndWait(batch, pageUrl, null, repair);
+}
+
   const chunks = splitManualApplyBatch(batch, manualEditApplyChunkSize());
-  if (chunks.length <= 1) return pushApplyEventAndWait(batch, pageUrl);
+
+  if (chunks.length <= 1) {
+return pushApplyEventAndWait(batch, pageUrl);
+}
 
   const expectedOpsByEntry = new Map();
+
   for (const entry of batch?.entries || []) {
     expectedOpsByEntry.set(entry.id, Array.isArray(entry.ops) ? entry.ops.length : 0);
   }
@@ -379,6 +470,7 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
     }
 
     let result;
+
     try {
       result = normalizeApplyChunkResult(await pushApplyEventAndWait(chunk.batch, pageUrl, chunk.meta));
     } catch (err) {
@@ -387,14 +479,23 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
       continue;
     }
 
-    for (const file of result.files) files.add(file);
+    for (const file of result.files) {
+files.add(file);
+}
+
     notes.push(...result.notes);
 
     const chunkFailedIds = new Set();
+
     for (const item of result.failed) {
       const entryId = item.entryId || item.id;
-      if (!entryId) continue;
+
+      if (!entryId) {
+continue;
+}
+
       chunkFailedIds.add(entryId);
+
       if (!failedByEntry.has(entryId)) {
         failedByEntry.set(entryId, {
           entryId,
@@ -411,13 +512,20 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
     }
 
     const reportedAppliedIds = new Set(result.appliedEntryIds);
+
     for (const entryId of reportedAppliedIds) {
-      if (!chunk.entryIds.has(entryId) || chunkFailedIds.has(entryId)) continue;
+      if (!chunk.entryIds.has(entryId) || chunkFailedIds.has(entryId)) {
+continue;
+}
+
       appliedOpsByEntry.set(entryId, (appliedOpsByEntry.get(entryId) || 0) + (chunk.opCountsByEntry.get(entryId) || 0));
     }
 
     for (const entryId of chunk.entryIds) {
-      if (reportedAppliedIds.has(entryId) || chunkFailedIds.has(entryId)) continue;
+      if (reportedAppliedIds.has(entryId) || chunkFailedIds.has(entryId)) {
+continue;
+}
+
       if (!failedByEntry.has(entryId)) {
         failedByEntry.set(entryId, { entryId, reason: 'not_reported_applied', candidates: [] });
       }
@@ -425,8 +533,12 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
   }
 
   const appliedEntryIds = [];
+
   for (const [entryId, expectedOps] of expectedOpsByEntry.entries()) {
-    if (failedByEntry.has(entryId)) continue;
+    if (failedByEntry.has(entryId)) {
+continue;
+}
+
     if ((appliedOpsByEntry.get(entryId) || 0) === expectedOps && expectedOps > 0) {
       appliedEntryIds.push(entryId);
     } else if (!failedByEntry.has(entryId)) {
@@ -435,6 +547,7 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
   }
 
   const failed = [...failedByEntry.values()];
+
   return {
     status: failed.length === 0 ? 'done' : appliedEntryIds.length > 0 ? 'partial' : 'error',
     appliedEntryIds,
@@ -446,6 +559,7 @@ async function pushApplyBatchInChunksAndWait(batch, pageUrl, context = {}) {
 
 function normalizeApplyChunkResult(result) {
   const status = result?.status === 'partial' ? 'partial' : result?.status === 'error' ? 'error' : 'done';
+
   return {
     status,
     message: typeof result?.message === 'string' ? result.message : null,
@@ -475,12 +589,15 @@ function invalidManualApplyResult(reason, eventId, extra = {}) {
 function validateManualApplyResultMessage(msg, deferred) {
   let data = msg?.data;
   const eventId = msg?.id || deferred?.event?.id || 'EVENT_ID';
+
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return invalidManualApplyResult('missing_result_data', eventId);
   }
+
   if ('entries' in data || 'ops' in data) {
     return invalidManualApplyResult('summary_result_not_allowed', eventId);
   }
+
   if (!['done', 'partial', 'error'].includes(data.status)) {
     return invalidManualApplyResult('invalid_status', eventId, { status: data.status ?? null });
   }
@@ -496,34 +613,41 @@ function validateManualApplyResultMessage(msg, deferred) {
       return invalidManualApplyResult('appliedEntryIds_must_contain_strings', eventId, { index });
     }
   }
+
   for (const [index, value] of data.files.entries()) {
     if (typeof value !== 'string' || !value) {
       return invalidManualApplyResult('files_must_contain_strings', eventId, { index });
     }
   }
+
   for (const [index, value] of data.notes.entries()) {
     if (typeof value !== 'string') {
       return invalidManualApplyResult('notes_must_contain_strings', eventId, { index });
     }
   }
+
   for (const [index, item] of data.failed.entries()) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       return invalidManualApplyResult('failed_must_contain_objects', eventId, { index });
     }
+
     if (typeof item.entryId !== 'string' || !item.entryId) {
       return invalidManualApplyResult('failed_entryId_required', eventId, { index });
     }
+
     if (typeof item.reason !== 'string' || !item.reason) {
       return invalidManualApplyResult('failed_reason_required', eventId, { index });
     }
   }
 
   const eventEntryIds = new Set((deferred?.batch?.entries || []).map((entry) => entry.id).filter(Boolean));
+
   for (const entryId of data.appliedEntryIds) {
     if (eventEntryIds.size > 0 && !eventEntryIds.has(entryId)) {
       return invalidManualApplyResult('applied_entry_id_not_in_event', eventId, { entryId });
     }
   }
+
   for (const item of data.failed) {
     if (eventEntryIds.size > 0 && !eventEntryIds.has(item.entryId)) {
       return invalidManualApplyResult('failed_entry_id_not_in_event', eventId, { entryId: item.entryId });
@@ -534,13 +658,16 @@ function validateManualApplyResultMessage(msg, deferred) {
     if (data.failed.length > 0) {
       return invalidManualApplyResult('done_result_has_failed_entries', eventId);
     }
+
     if (countManualApplyOps(deferred?.batch) > 0 && data.appliedEntryIds.length === 0) {
       return invalidManualApplyResult('done_result_missing_applied_entry_ids', eventId);
     }
   }
+
   if (data.status === 'partial' && data.appliedEntryIds.length === 0 && data.failed.length === 0) {
     return invalidManualApplyResult('partial_result_has_no_entries', eventId);
   }
+
   if (data.status === 'error' && data.appliedEntryIds.length > 0) {
     return invalidManualApplyResult('error_result_has_applied_entries', eventId);
   }
@@ -560,18 +687,23 @@ function validateManualApplyResultMessage(msg, deferred) {
 
 function firstFailureReason(result) {
   const first = Array.isArray(result?.failed) ? result.failed.find(Boolean) : null;
+
   return first?.reason || first?.message || null;
 }
 
 function markChunkEntriesFailed(failedByEntry, chunk, reason) {
   for (const entryId of chunk.entryIds) {
-    if (failedByEntry.has(entryId)) continue;
+    if (failedByEntry.has(entryId)) {
+continue;
+}
+
     failedByEntry.set(entryId, { entryId, reason, candidates: [] });
   }
 }
 
 function splitManualApplyBatch(batch, maxOps) {
   const totalOpCount = countManualApplyOps(batch);
+
   if (totalOpCount <= maxOps) {
     return [{
       batch,
@@ -583,29 +715,41 @@ function splitManualApplyBatch(batch, maxOps) {
 
   const rawChunks = [];
   let current = createManualApplyChunkBuilder();
+
   for (const entry of batch?.entries || []) {
     const ops = entry.ops || [];
+
     if (ops.length <= maxOps) {
       if (current.opCount > 0 && current.opCount + ops.length > maxOps) {
         rawChunks.push(current);
         current = createManualApplyChunkBuilder();
       }
-      for (const op of ops) addOpToManualApplyChunk(current, entry, op);
+
+      for (const op of ops) {
+addOpToManualApplyChunk(current, entry, op);
+}
+
       continue;
     }
+
     if (current.opCount > 0) {
       rawChunks.push(current);
       current = createManualApplyChunkBuilder();
     }
+
     for (const op of ops) {
       if (current.opCount >= maxOps) {
         rawChunks.push(current);
         current = createManualApplyChunkBuilder();
       }
+
       addOpToManualApplyChunk(current, entry, op);
     }
   }
-  if (current.opCount > 0) rawChunks.push(current);
+
+  if (current.opCount > 0) {
+rawChunks.push(current);
+}
 
   return rawChunks.map((chunk, index) => ({
     batch: {
@@ -648,16 +792,25 @@ function createManualApplyChunkBuilder() {
 
 function addOpToManualApplyChunk(chunk, entry, op) {
   let chunkEntry = chunk.entryById.get(entry.id);
+
   if (!chunkEntry) {
     chunkEntry = { ...entry, ops: [] };
     chunk.entryById.set(entry.id, chunkEntry);
     chunk.entryIds.add(entry.id);
     chunk.entries.push(chunkEntry);
   }
+
   chunkEntry.ops.push(op);
   chunk.ops.push({ ...op, entryId: op.entryId || entry.id });
-  if (!chunk.refsByEntry.has(entry.id)) chunk.refsByEntry.set(entry.id, new Set());
-  if (op.ref) chunk.refsByEntry.get(entry.id).add(op.ref);
+
+  if (!chunk.refsByEntry.has(entry.id)) {
+chunk.refsByEntry.set(entry.id, new Set());
+}
+
+  if (op.ref) {
+chunk.refsByEntry.get(entry.id).add(op.ref);
+}
+
   chunk.opCountsByEntry.set(entry.id, (chunk.opCountsByEntry.get(entry.id) || 0) + 1);
   chunk.opCount += 1;
 }
@@ -665,36 +818,55 @@ function addOpToManualApplyChunk(chunk, entry, op) {
 function filterManualApplyChunkCandidates(batch, refsByEntry) {
   return (batch?.candidates || []).filter((candidate) => {
     const refs = refsByEntry.get(candidate.entryId);
-    if (!refs) return false;
-    if (!candidate.ref) return true;
+
+    if (!refs) {
+return false;
+}
+
+    if (!candidate.ref) {
+return true;
+}
+
     return refs.has(candidate.ref);
   });
 }
 
 function resolveApplyDeferred(eventId, body) {
   const deferred = state.pendingApplyDeferreds.get(eventId);
-  if (!deferred) return false;
+
+  if (!deferred) {
+return false;
+}
+
   state.pendingApplyDeferreds.delete(eventId);
   clearTimeout(deferred.timer);
   removeManualApplyEvidence(deferred.event?.evidencePath);
   deferred.resolve(body);
+
   return true;
 }
 
 function rejectApplyDeferred(eventId, reason) {
   const deferred = state.pendingApplyDeferreds.get(eventId);
-  if (!deferred) return false;
+
+  if (!deferred) {
+return false;
+}
+
   state.pendingApplyDeferreds.delete(eventId);
   clearTimeout(deferred.timer);
   removeManualApplyEvidence(deferred.event?.evidencePath);
   deferred.reject(new Error(reason || 'chat_agent_error'));
+
   return true;
 }
 
 function snapshotApplyEventFiles(batch) {
   const snapshot = new Map();
+
   for (const relativeFile of collectManualApplyFiles(batch)) {
     const absolute = path.resolve(process.cwd(), relativeFile);
+
     try {
       snapshot.set(relativeFile, {
         exists: fs.existsSync(absolute),
@@ -704,6 +876,7 @@ function snapshotApplyEventFiles(batch) {
       // If a file cannot be read before dispatch, do not attempt late rollback.
     }
   }
+
   return snapshot;
 }
 
@@ -713,7 +886,11 @@ function manualApplyTransactionPath(cwd = process.cwd()) {
 
 function readManualApplyTransaction(cwd = process.cwd()) {
   const file = manualApplyTransactionPath(cwd);
-  if (!fs.existsSync(file)) return null;
+
+  if (!fs.existsSync(file)) {
+return null;
+}
+
   try {
     return JSON.parse(fs.readFileSync(file, 'utf-8'));
   } catch {
@@ -733,6 +910,7 @@ function writeManualApplyTransaction({ cwd = process.cwd(), pageUrl = null, batc
     files: files.map((relativeFile) => {
       const absolute = path.resolve(cwd, relativeFile);
       const exists = fs.existsSync(absolute);
+
       return {
         file: relativeFile,
         exists,
@@ -743,18 +921,28 @@ function writeManualApplyTransaction({ cwd = process.cwd(), pageUrl = null, batc
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(`${file}.tmp`, JSON.stringify(transaction, null, 2) + '\n', 'utf-8');
   fs.renameSync(`${file}.tmp`, file);
+
   return transaction;
 }
 
 function clearManualApplyTransaction(cwd = process.cwd(), transactionId = null) {
   const file = manualApplyTransactionPath(cwd);
-  if (!fs.existsSync(file)) return false;
+
+  if (!fs.existsSync(file)) {
+return false;
+}
+
   if (transactionId) {
     const existing = readManualApplyTransaction(cwd);
-    if (existing?.id && existing.id !== transactionId) return false;
+
+    if (existing?.id && existing.id !== transactionId) {
+return false;
+}
   }
+
   try {
     fs.unlinkSync(file);
+
     return true;
   } catch {
     return false;
@@ -763,28 +951,44 @@ function clearManualApplyTransaction(cwd = process.cwd(), transactionId = null) 
 
 function rollbackManualApplyTransaction({ cwd = process.cwd(), pageUrl = null, reason = 'manual_edit_transaction_rollback' } = {}) {
   const transaction = readManualApplyTransaction(cwd);
-  if (!transaction) return null;
-  if (pageUrl && transaction.pageUrl && transaction.pageUrl !== pageUrl) return null;
+
+  if (!transaction) {
+return null;
+}
+
+  if (pageUrl && transaction.pageUrl && transaction.pageUrl !== pageUrl) {
+return null;
+}
 
   let pendingIds = new Set();
+
   try {
     const buffer = readManualEditsBuffer(cwd);
     pendingIds = new Set((buffer.entries || []).map((entry) => entry.id).filter(Boolean));
   } catch {
     pendingIds = new Set(transaction.entryIds || []);
   }
+
   const shouldRollback = (transaction.entryIds || []).some((id) => pendingIds.has(id));
+
   if (!shouldRollback) {
     clearManualApplyTransaction(cwd, transaction.id);
+
     return { id: transaction.id, reason, rolledBackFiles: [], rollbackFailures: [], skipped: 'entries_not_pending' };
   }
 
   const rolledBackFiles = [];
   const rollbackFailures = [];
+
   for (const item of transaction.files || []) {
     const relativeFile = normalizeProjectFile(item.file);
-    if (!relativeFile) continue;
+
+    if (!relativeFile) {
+continue;
+}
+
     const absolute = path.resolve(cwd, relativeFile);
+
     try {
       if (item.exists) {
         fs.mkdirSync(path.dirname(absolute), { recursive: true });
@@ -792,11 +996,13 @@ function rollbackManualApplyTransaction({ cwd = process.cwd(), pageUrl = null, r
       } else if (fs.existsSync(absolute)) {
         fs.rmSync(absolute);
       }
+
       rolledBackFiles.push(relativeFile);
     } catch (err) {
       rollbackFailures.push({ file: relativeFile, reason: 'restore_failed', message: err.message || String(err) });
     }
   }
+
   clearManualApplyTransaction(cwd, transaction.id);
   recordManualEditActivity('manual_edit_transaction_rolled_back', {
     id: transaction.id,
@@ -806,32 +1012,58 @@ function rollbackManualApplyTransaction({ cwd = process.cwd(), pageUrl = null, r
     rolledBackFiles: rolledBackFiles.map(summarizeManualLogFile).filter(Boolean),
     rollbackFailures: summarizeManualDiagnostics(rollbackFailures),
   });
+
   return { id: transaction.id, reason, rolledBackFiles, rollbackFailures };
 }
 
 function collectManualApplyFiles(batch, extraFiles = []) {
   const files = [];
+
   for (const entry of batch?.entries || []) {
-    for (const op of entry.ops || []) files.push(op.sourceHint?.file);
+    for (const op of entry.ops || []) {
+files.push(op.sourceHint?.file);
+}
   }
+
   for (const candidate of batch?.candidates || []) {
     files.push(candidate.sourceHint?.relativeFile, candidate.sourceHint?.file);
-    for (const item of candidate.textMatches || []) files.push(item.file);
-    for (const item of candidate.objectKeyMatches || []) files.push(item.file);
-    for (const item of candidate.locatorMatches || []) files.push(item.file);
-    for (const item of candidate.contextTextMatches || []) files.push(item.file);
+
+    for (const item of candidate.textMatches || []) {
+files.push(item.file);
+}
+
+    for (const item of candidate.objectKeyMatches || []) {
+files.push(item.file);
+}
+
+    for (const item of candidate.locatorMatches || []) {
+files.push(item.file);
+}
+
+    for (const item of candidate.contextTextMatches || []) {
+files.push(item.file);
+}
   }
+
   files.push(...(extraFiles || []));
+
   return [...new Set(files)]
     .map((file) => normalizeProjectFile(file))
     .filter(Boolean);
 }
 
 function normalizeProjectFile(file) {
-  if (!file || typeof file !== 'string') return null;
+  if (!file || typeof file !== 'string') {
+return null;
+}
+
   const absolute = path.isAbsolute(file) ? file : path.resolve(process.cwd(), file);
   const relative = path.relative(process.cwd(), absolute);
-  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return null;
+
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+return null;
+}
+
   return relative;
 }
 
@@ -839,10 +1071,16 @@ function rollbackApplySnapshot(batch, rollbackSnapshot, extraFiles = [], reason 
   const scope = collectManualApplyFiles(batch, extraFiles);
   const rolledBackFiles = [];
   const rollbackFailures = [];
+
   for (const relativeFile of scope) {
     const before = rollbackSnapshot?.get(relativeFile);
-    if (!before) continue;
+
+    if (!before) {
+continue;
+}
+
     const absolute = path.resolve(process.cwd(), relativeFile);
+
     try {
       if (before.exists) {
         fs.mkdirSync(path.dirname(absolute), { recursive: true });
@@ -850,18 +1088,25 @@ function rollbackApplySnapshot(batch, rollbackSnapshot, extraFiles = [], reason 
       } else if (fs.existsSync(absolute)) {
         fs.rmSync(absolute);
       }
+
       rolledBackFiles.push(relativeFile);
     } catch (err) {
       rollbackFailures.push({ file: relativeFile, reason: 'restore_failed', message: err.message || String(err) });
     }
   }
+
   return { rolledBackFiles, rollbackFailures };
 }
 
 function rollbackTimedOutApplyReply(msg) {
   const details = state.timedOutApplyIds.get(msg.id);
-  if (!details) return { rolledBackFiles: [], rollbackFailures: [] };
+
+  if (!details) {
+return { rolledBackFiles: [], rollbackFailures: [] };
+}
+
   state.timedOutApplyIds.delete(msg.id);
+
   return rollbackApplySnapshot(details.batch, details.rollbackSnapshot, msg.data?.files || [], 'stale_manual_edit_apply_reply');
 }
 
@@ -870,48 +1115,75 @@ function rollbackTimedOutApplyReply(msg) {
 const MAX_ANNOTATION_BYTES = 10 * 1024 * 1024;
 
 function enqueueEvent(event) {
-  if (!event || (event.id && state.pendingEvents.some((entry) => entry.event?.id === event.id && entry.event?.type === event.type))) return;
+  if (!event || (event.id && state.pendingEvents.some((entry) => entry.event?.id === event.id && entry.event?.type === event.type))) {
+return;
+}
+
   state.pendingEvents.push({ event, leaseUntil: 0, seq: state.nextEventSeq++ });
   flushPendingPolls();
 }
 
 function restorePendingEventsFromStore() {
-  if (!state.sessionStore) return;
+  if (!state.sessionStore) {
+return;
+}
+
   for (const snapshot of state.sessionStore.listActiveSessions()) {
-    if (snapshot.pendingEvent) enqueueEvent(snapshot.pendingEvent);
+    if (snapshot.pendingEvent) {
+enqueueEvent(snapshot.pendingEvent);
+}
   }
 }
 
 function findAvailablePendingEvent(now = Date.now()) {
   for (const entry of state.pendingEvents) {
-    if (entry.leaseUntil && entry.leaseUntil > now) continue;
+    if (entry.leaseUntil && entry.leaseUntil > now) {
+continue;
+}
+
     return entry;
   }
+
   return null;
 }
 
 function leaseEvent(entry, leaseMs) {
   if (!entry.event?.id) {
     const idx = state.pendingEvents.indexOf(entry);
-    if (idx !== -1) state.pendingEvents.splice(idx, 1);
+
+    if (idx !== -1) {
+state.pendingEvents.splice(idx, 1);
+}
+
     return entry.event;
   }
+
   entry.leaseUntil = Date.now() + leaseMs;
+
   return entry.event;
 }
 
 function acknowledgePendingEvent(id) {
-  if (!id) return false;
+  if (!id) {
+return false;
+}
+
   const idx = state.pendingEvents.findIndex((entry) => entry.event?.id === id);
-  if (idx === -1) return false;
+
+  if (idx === -1) {
+return false;
+}
+
   const acknowledged = state.pendingEvents[idx].event;
   state.pendingEvents.splice(idx, 1);
   scheduleLeaseFlush();
+
   return acknowledged;
 }
 
 function manualApplyReplyCommand(eventOrId = 'EVENT_ID') {
   const id = typeof eventOrId === 'string' ? eventOrId : eventOrId?.id || 'EVENT_ID';
+
   return `live-poll.mjs --reply ${id} done --data '<json>'`;
 }
 
@@ -927,6 +1199,7 @@ function buildManualApplyAgentAction(eventOrId = 'EVENT_ID') {
 function summarizeManualApplyEvent(event = {}, batch = event.batch) {
   const entries = Array.isArray(batch?.entries) ? batch.entries : [];
   const opCount = entries.reduce((sum, entry) => sum + (Array.isArray(entry.ops) ? entry.ops.length : 0), 0);
+
   return {
     pageUrl: event.pageUrl || null,
     chunk: event.chunk || null,
@@ -944,6 +1217,7 @@ function summarizePendingEventForStatus(entry) {
     leased: !!(entry.leaseUntil && entry.leaseUntil > Date.now()),
     leaseUntil: entry.leaseUntil || null,
   };
+
   if (event.type === 'manual_edit_apply') {
     summary.pageUrl = event.pageUrl || null;
     summary.chunk = event.chunk || null;
@@ -952,6 +1226,7 @@ function summarizePendingEventForStatus(entry) {
     summary.agentAction = event.agentAction || buildManualApplyAgentAction(event);
     summary.manualApplySummary = summarizeManualApplyEvent(event, state.pendingApplyDeferreds.get(event.id)?.batch || event.batch);
   }
+
   return summary;
 }
 
@@ -961,7 +1236,11 @@ function cancelPendingManualApplyEvents(pageUrl, reason = 'manual_edit_discarded
 
   for (let i = state.pendingEvents.length - 1; i >= 0; i -= 1) {
     const event = state.pendingEvents[i]?.event;
-    if (!shouldCancel(event)) continue;
+
+    if (!shouldCancel(event)) {
+continue;
+}
+
     state.pendingEvents.splice(i, 1);
     removeManualApplyEvidence(event.evidencePath);
     canceledById.set(event.id, {
@@ -972,7 +1251,10 @@ function cancelPendingManualApplyEvents(pageUrl, reason = 'manual_edit_discarded
   }
 
   for (const [eventId, deferred] of [...state.pendingApplyDeferreds.entries()]) {
-    if (!shouldCancel(deferred.event)) continue;
+    if (!shouldCancel(deferred.event)) {
+continue;
+}
+
     state.pendingApplyDeferreds.delete(eventId);
     clearTimeout(deferred.timer);
     const rollback = rollbackApplySnapshot(deferred.batch, deferred.rollbackSnapshot, [], reason);
@@ -992,7 +1274,10 @@ function cancelPendingManualApplyEvents(pageUrl, reason = 'manual_edit_discarded
     deferred.reject(new Error(reason));
   }
 
-  if (canceledById.size > 0) flushPendingPolls();
+  if (canceledById.size > 0) {
+flushPendingPolls();
+}
+
   return [...canceledById.values()];
 }
 
@@ -1001,13 +1286,21 @@ function scheduleLeaseFlush() {
     clearTimeout(state.leaseTimer);
     state.leaseTimer = null;
   }
-  if (state.pendingPolls.length === 0) return;
+
+  if (state.pendingPolls.length === 0) {
+return;
+}
+
   const now = Date.now();
   const nextLeaseUntil = state.pendingEvents
     .map((entry) => entry.leaseUntil || 0)
     .filter((leaseUntil) => leaseUntil > now)
     .sort((a, b) => a - b)[0];
-  if (!nextLeaseUntil) return;
+
+  if (!nextLeaseUntil) {
+return;
+}
+
   state.leaseTimer = setTimeout(() => {
     state.leaseTimer = null;
     flushPendingPolls();
@@ -1016,19 +1309,27 @@ function scheduleLeaseFlush() {
 
 function flushPendingPolls() {
   let changed = false;
+
   while (state.pendingPolls.length > 0) {
     const entry = findAvailablePendingEvent();
+
     if (!entry) {
       scheduleLeaseFlush();
       broadcastAgentPollingIfChanged();
+
       return;
     }
+
     const poll = state.pendingPolls.shift();
     poll.resolve(leaseEvent(entry, poll.leaseMs));
     changed = true;
   }
+
   scheduleLeaseFlush();
-  if (changed) broadcastAgentPollingIfChanged();
+
+  if (changed) {
+broadcastAgentPollingIfChanged();
+}
 }
 
 function agentPollingConnected() {
@@ -1037,7 +1338,11 @@ function agentPollingConnected() {
 
 function broadcastAgentPollingIfChanged() {
   const connected = agentPollingConnected();
-  if (state.lastAgentPollingBroadcast === connected) return;
+
+  if (state.lastAgentPollingBroadcast === connected) {
+return;
+}
+
   state.lastAgentPollingBroadcast = connected;
   broadcast({ type: 'agent_polling', connected });
 }
@@ -1045,8 +1350,11 @@ function broadcastAgentPollingIfChanged() {
 /** Push a message to all connected SSE clients. */
 function broadcast(msg) {
   const data = 'data: ' + JSON.stringify(msg) + '\n\n';
+
   for (const res of state.sseClients) {
-    try { res.write(data); } catch { /* client gone */ }
+    try {
+ res.write(data); 
+} catch { /* client gone */ }
   }
 }
 
@@ -1058,6 +1366,7 @@ function recordManualEditActivity(type, details = {}) {
     ...details,
   };
   state.manualEditActivity = entry;
+
   if (DEBUG_MANUAL_EDIT_EVENTS) {
     try {
       const filePath = path.join(getLiveDir(process.cwd()), 'manual-edit-events.jsonl');
@@ -1067,13 +1376,16 @@ function recordManualEditActivity(type, details = {}) {
       /* diagnostics are best-effort; never block live mode on observability */
     }
   }
+
   broadcast(entry);
+
   return entry;
 }
 
 function getManualEditStatus() {
   try {
     const { totalCount, perPage } = countPendingByPage(process.cwd());
+
     return { totalCount, perPage, lastActivity: state.manualEditActivity };
   } catch (err) {
     return {
@@ -1090,6 +1402,7 @@ function summarizePendingManualEditBatch(pageUrl = null) {
     const buffer = readManualEditsBuffer(process.cwd());
     const entries = (buffer.entries || [])
       .filter((entry) => !pageUrl || entry.pageUrl === pageUrl);
+
     return {
       pendingEntryCount: entries.length,
       pendingOpCount: entries.reduce((sum, entry) => sum + (entry.ops?.length || 0), 0),
@@ -1100,7 +1413,10 @@ function summarizePendingManualEditBatch(pageUrl = null) {
 }
 
 function summarizeManualApplyFailures(failed) {
-  if (!Array.isArray(failed)) return [];
+  if (!Array.isArray(failed)) {
+return [];
+}
+
   return failed.slice(0, 20).map((item) => ({
     id: item.id || item.entryId || null,
     reason: item.reason || item.message || 'failed',
@@ -1113,7 +1429,10 @@ function summarizeManualApplyFailures(failed) {
 }
 
 function summarizeManualDiagnostics(items) {
-  if (!Array.isArray(items) || items.length === 0) return undefined;
+  if (!Array.isArray(items) || items.length === 0) {
+return undefined;
+}
+
   return items.slice(0, 12).map((item) => ({
     reason: item.reason || item.kind || undefined,
     detail: compactManualLogText(item.detail, 220),
@@ -1127,16 +1446,30 @@ function summarizeManualDiagnostics(items) {
 }
 
 function summarizeManualLogFile(file) {
-  if (!file || typeof file !== 'string') return undefined;
-  if (!path.isAbsolute(file)) return file;
+  if (!file || typeof file !== 'string') {
+return undefined;
+}
+
+  if (!path.isAbsolute(file)) {
+return file;
+}
+
   const relative = path.relative(process.cwd(), file);
+
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative : file;
 }
 
 function compactManualLogText(value, max = 200) {
-  if (typeof value !== 'string') return undefined;
+  if (typeof value !== 'string') {
+return undefined;
+}
+
   const normalized = value.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= max) return normalized;
+
+  if (normalized.length <= max) {
+return normalized;
+}
+
   return normalized.slice(0, max) + `... [truncated ${normalized.length - max} chars]`;
 }
 
@@ -1155,8 +1488,11 @@ function loadBrowserScripts() {
     path.join(process.cwd(), 'node_modules', 'impeccable', 'cli', 'engine', 'detect-antipatterns-browser.js'),
   ];
   let detectScript = '';
+
   for (const p of detectPaths) {
-    try { detectScript = fs.readFileSync(p, 'utf-8'); break; } catch { /* try next */ }
+    try {
+ detectScript = fs.readFileSync(p, 'utf-8'); break; 
+} catch { /* try next */ }
   }
 
   // live-browser.js: DO NOT cache. Return the path so the /live.js handler
@@ -1164,6 +1500,7 @@ function loadBrowserScripts() {
   // should land on the next tab reload, not require a server restart.
   const sessionPath = path.join(__dirname, 'live-browser-session.js');
   const livePath = path.join(__dirname, 'live-browser.js');
+
   for (const p of [sessionPath, livePath]) {
     if (!fs.existsSync(p)) {
       process.stderr.write('Error: live browser script not found at ' + p + '\n');
@@ -1180,12 +1517,19 @@ function hasProjectContext() {
   // concern, surfaced by the design panel's own empty state.
   try {
     fs.accessSync(path.join(CONTEXT_DIR, 'PRODUCT.md'), fs.constants.R_OK);
+
     return true;
-  } catch { return false; }
+  } catch {
+ return false; 
+}
 }
 
 function statOrNull(filePath) {
-  try { return fs.statSync(filePath); } catch { return null; }
+  try {
+ return fs.statSync(filePath); 
+} catch {
+ return null; 
+}
 }
 
 // HTTP request handler
@@ -1197,7 +1541,12 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+    if (req.method === 'OPTIONS') {
+ res.writeHead(204); res.end();
+
+ return; 
+}
 
     const p = url.pathname;
 
@@ -1209,14 +1558,17 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       // every subsequent session.
       let sessionScript;
       let liveScript;
+
       try {
         sessionScript = fs.readFileSync(sessionPath, 'utf-8');
         liveScript = fs.readFileSync(livePath, 'utf-8');
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Error reading live browser scripts: ' + err.message);
+
         return;
       }
+
       const body =
         `window.__IMPECCABLE_TOKEN__ = '${state.token}';\n` +
         `window.__IMPECCABLE_PORT__ = ${state.port};\n` +
@@ -1228,12 +1580,20 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         'Pragma': 'no-cache',
       });
       res.end(body);
+
       return;
     }
+
     if (p === '/detect.js' || p === '/') {
-      if (!detectScript) { res.writeHead(404); res.end('Not available'); return; }
+      if (!detectScript) {
+ res.writeHead(404); res.end('Not available');
+
+ return; 
+}
+
       res.writeHead(200, { 'Content-Type': 'application/javascript' });
       res.end(detectScript);
+
       return;
     }
 
@@ -1242,6 +1602,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     // window.modernScreenshot.domToBlob(...) for capture.
     if (p === '/modern-screenshot.js') {
       const vendorPath = path.join(__dirname, 'modern-screenshot.umd.js');
+
       try {
         res.writeHead(200, {
           'Content-Type': 'application/javascript',
@@ -1251,6 +1612,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       } catch {
         res.writeHead(404); res.end('Vendor script not found');
       }
+
       return;
     }
 
@@ -1260,48 +1622,73 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     // bridge and preserves the "one shot from the user's POV" UX.
     if (p === '/annotation' && req.method === 'POST') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       const eventId = url.searchParams.get('eventId');
+
       if (!eventId || !/^[A-Za-z0-9_-]{1,64}$/.test(eventId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid eventId' }));
+
         return;
       }
+
       if ((req.headers['content-type'] || '').toLowerCase() !== 'image/png') {
         res.writeHead(415, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Content-Type must be image/png' }));
+
         return;
       }
+
       if (!state.sessionDir) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Session dir unavailable' }));
+
         return;
       }
+
       const chunks = [];
       let total = 0;
       let aborted = false;
       req.on('data', (c) => {
-        if (aborted) return;
+        if (aborted) {
+return;
+}
+
         total += c.length;
+
         if (total > MAX_ANNOTATION_BYTES) {
           aborted = true;
           res.writeHead(413, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Payload too large' }));
           req.destroy();
+
           return;
         }
+
         chunks.push(c);
       });
       req.on('end', () => {
-        if (aborted) return;
+        if (aborted) {
+return;
+}
+
         const absPath = path.join(state.sessionDir, eventId + '.png');
+
         try {
           fs.writeFileSync(absPath, Buffer.concat(chunks));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Write failed: ' + err.message }));
+
           return;
         }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, path: absPath }));
       });
@@ -1311,13 +1698,20 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
           res.end(JSON.stringify({ error: 'Upload failed' }));
         }
       });
+
       return;
     }
 
     // --- Health ---
     if (p === '/status') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' }));
+
+ return; 
+}
+
       const sessions = state.sessionStore ? state.sessionStore.listActiveSessions() : [];
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
@@ -1329,6 +1723,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         activeSessions: sessions,
         manualEdits: getManualEditStatus(),
       }));
+
       return;
     }
 
@@ -1339,6 +1734,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         hasProjectContext: hasProjectContext(),
         connectedClients: state.sseClients.size,
       }));
+
       return;
     }
 
@@ -1355,7 +1751,12 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     //   /design-system/raw     returns DESIGN.md markdown verbatim
     if (p === '/design-system.json' || p === '/design-system/raw') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
 
       const mdPath = path.join(CONTEXT_DIR, 'DESIGN.md');
       const jsonPath = resolveDesignSidecarPath(process.cwd(), CONTEXT_DIR) || getDesignSidecarPath(process.cwd());
@@ -1363,15 +1764,22 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       const jsonStat = statOrNull(jsonPath);
 
       if (p === '/design-system/raw') {
-        if (!mdStat) { res.writeHead(404); res.end('Not found'); return; }
+        if (!mdStat) {
+ res.writeHead(404); res.end('Not found');
+
+ return; 
+}
+
         res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8' });
         res.end(fs.readFileSync(mdPath, 'utf-8'));
+
         return;
       }
 
       if (!mdStat && !jsonStat) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ present: false }));
+
         return;
       }
 
@@ -1400,29 +1808,62 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(response));
+
       return;
     }
 
     // --- Source file (no-HMR fallback) ---
     if (p === '/source') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       const filePath = url.searchParams.get('path');
-      if (!filePath || filePath.includes('..')) { res.writeHead(400); res.end('Bad path'); return; }
+
+      if (!filePath || filePath.includes('..')) {
+ res.writeHead(400); res.end('Bad path');
+
+ return; 
+}
+
       const absPath = path.resolve(process.cwd(), filePath);
-      if (!absPath.startsWith(process.cwd())) { res.writeHead(403); res.end('Forbidden'); return; }
+
+      if (!absPath.startsWith(process.cwd())) {
+ res.writeHead(403); res.end('Forbidden');
+
+ return; 
+}
+
       let content;
-      try { content = fs.readFileSync(absPath, 'utf-8'); }
-      catch { res.writeHead(404); res.end('File not found'); return; }
+
+      try {
+ content = fs.readFileSync(absPath, 'utf-8'); 
+} catch {
+ res.writeHead(404); res.end('File not found');
+
+ return; 
+}
+
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(content);
+
       return;
     }
 
     // --- SSE: server→browser push (replaces WebSocket) ---
     if (p === '/events' && req.method === 'GET') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -1439,19 +1880,27 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
 
       // Keepalive: SSE comment every 30s prevents silent connection drops.
       const heartbeat = setInterval(() => {
-        try { res.write(': keepalive\n\n'); } catch { clearInterval(heartbeat); }
+        try {
+ res.write(': keepalive\n\n'); 
+} catch {
+ clearInterval(heartbeat); 
+}
       }, SSE_HEARTBEAT_INTERVAL);
 
       req.on('close', () => {
         clearInterval(heartbeat);
         state.sseClients.delete(res);
+
         if (state.sseClients.size === 0) {
           clearTimeout(state.exitTimer);
           state.exitTimer = setTimeout(() => {
-            if (state.sseClients.size === 0) enqueueEvent({ type: 'exit' });
+            if (state.sseClients.size === 0) {
+enqueueEvent({ type: 'exit' });
+}
           }, 8000);
         }
       });
+
       return;
     }
 
@@ -1459,25 +1908,37 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     // page batch through the local AI copy-edit runner.
     if (p === '/manual-edit-stash' && req.method === 'POST') {
       let body = '';
-      req.on('data', (c) => { body += c; });
+      req.on('data', (c) => {
+ body += c; 
+});
       req.on('end', () => {
         let msg;
-        try { msg = JSON.parse(body); } catch {
+
+        try {
+ msg = JSON.parse(body); 
+} catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid JSON' }));
+
           return;
         }
+
         if (msg.token !== state.token) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Unauthorized' }));
+
           return;
         }
+
         const error = validateEvent({ ...msg, type: 'manual_edits' });
+
         if (error) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error }));
+
           return;
         }
+
         try {
           stageManualEditEntry(process.cwd(), {
             id: msg.id,
@@ -1488,8 +1949,10 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'stash_write_failed', message: err.message }));
+
           return;
         }
+
         const { totalCount, perPage } = countPendingByPage(process.cwd());
         const pendingCount = perPage[msg.pageUrl] || 0;
         recordManualEditActivity('manual_edit_stashed', {
@@ -1503,13 +1966,20 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, pendingCount, totalCount, perPage }));
       });
+
       return;
     }
 
     // GET /manual-edit-stash?pageUrl=<url>  →  { count, totalCount, perPage, entries }
     if (p === '/manual-edit-stash' && req.method === 'GET') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       const pageUrl = url.searchParams.get('pageUrl') || '';
       const { totalCount, perPage } = countPendingByPage(process.cwd());
       const buffer = readManualEditsBuffer(process.cwd());
@@ -1521,22 +1991,32 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         perPage,
         entries: entriesForPage,
       }));
+
       return;
     }
 
     // POST /manual-edit-commit?pageUrl=<url>  →  ask the AI to apply the staged page batch.
     if (p === '/manual-edit-commit' && req.method === 'POST') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       const pageUrl = url.searchParams.get('pageUrl');
       const asyncMode = /^(1|true|yes)$/i.test(url.searchParams.get('async') || '');
       const repairOnly = /^(1|true|yes)$/i.test(url.searchParams.get('repair') || '');
       const existingTransaction = readManualApplyTransaction(process.cwd());
+
       if (repairOnly && !existingTransaction) {
         res.writeHead(409, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'manual_edit_repair_transaction_missing' }));
+
         return;
       }
+
       const recoveredTransaction = repairOnly ? null : rollbackManualApplyTransaction({
         cwd: process.cwd(),
         pageUrl,
@@ -1558,6 +2038,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         } : null,
         ...summarizePendingManualEditBatch(pageUrl),
       });
+
       if (asyncMode) {
         res.writeHead(202, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -1567,15 +2048,18 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
           perPage: before.perPage,
         }));
       }
+
       (async () => {
         let result;
         let routedProvider = 'subprocess';
         let transaction = null;
         let commitBatch = null;
+
         try {
           if (pendingCount > 0) {
             const transactionBatch = buildManualEditEvidence({ cwd: process.cwd(), pageUrl });
             commitBatch = transactionBatch;
+
             if (!repairOnly && countManualApplyOps(transactionBatch) > 0) {
               transaction = writeManualApplyTransaction({
                 cwd: process.cwd(),
@@ -1586,9 +2070,11 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
               transaction = existingTransaction;
             }
           }
+
           const requestedMode = (process.env.IMPECCABLE_LIVE_COPY_AGENT || 'auto').trim().toLowerCase();
           const useChatRoute = requestedMode === 'chat'
             || (requestedMode === 'auto' && chatAgentLikelyActive());
+
           if (useChatRoute) {
             routedProvider = 'chat';
             const timeoutMs = Number(process.env.IMPECCABLE_LIVE_COPY_AGENT_TIMEOUT_MS || 120000);
@@ -1627,6 +2113,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
               reason: 'manual_edit_commit_exception',
             });
           }
+
           const message = err.stderr?.toString?.() || err.message;
           recordManualEditActivity('manual_edit_commit_failed', {
             pageUrl,
@@ -1635,6 +2122,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
             message,
             transactionId: transaction?.id || null,
           });
+
           if (!asyncMode) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
@@ -1642,14 +2130,20 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
               message,
             }));
           }
+
           return;
         } finally {
           if (transaction) {
             const shouldKeepTransaction = result?.needsManualDecision === true;
-            if (!shouldKeepTransaction) clearManualApplyTransaction(process.cwd(), transaction.id);
+
+            if (!shouldKeepTransaction) {
+clearManualApplyTransaction(process.cwd(), transaction.id);
+}
           }
         }
+
         const { totalCount, perPage } = countPendingByPage(process.cwd());
+
         if (result?.needsManualDecision) {
           recordManualEditActivity('manual_edit_repair_needs_decision', {
             pageUrl,
@@ -1681,34 +2175,52 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
             totalCount,
           });
         }
+
         if (!asyncMode) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ...result, totalCount, perPage }));
         }
       })();
+
       return;
     }
 
     // POST /manual-edit-repair-decision  →  user resolves an exhausted repair loop.
     if (p === '/manual-edit-repair-decision' && req.method === 'POST') {
       let body = '';
-      req.on('data', (chunk) => { body += chunk; });
+      req.on('data', (chunk) => {
+ body += chunk; 
+});
       req.on('end', () => {
         let payload = {};
-        try { payload = body ? JSON.parse(body) : {}; } catch {
+
+        try {
+ payload = body ? JSON.parse(body) : {}; 
+} catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid JSON' }));
+
           return;
         }
+
         const token = payload.token || url.searchParams.get('token');
-        if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+        if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
         const pageUrl = payload.pageUrl || url.searchParams.get('pageUrl') || null;
         const action = String(payload.action || url.searchParams.get('action') || '').trim().toLowerCase();
+
         if (action !== 'rollback') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'unsupported_manual_edit_repair_decision', action }));
+
           return;
         }
+
         const rollback = rollbackManualApplyTransaction({
           cwd: process.cwd(),
           pageUrl,
@@ -1727,18 +2239,26 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response));
       });
+
       return;
     }
 
     // POST /manual-edit-discard?pageUrl=<url>  →  drops entries (all if no pageUrl)
     if (p === '/manual-edit-discard' && req.method === 'POST') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       const pageUrl = url.searchParams.get('pageUrl');
       let discarded;
       let discardedEntries = [];
       let canceledApplyEvents = [];
       let transactionRollback = null;
+
       try {
         const buffer = readManualEditsBuffer(process.cwd());
         transactionRollback = rollbackManualApplyTransaction({
@@ -1746,6 +2266,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
           pageUrl,
           reason: 'manual_edit_discarded',
         });
+
         if (pageUrl) {
           discardedEntries = buffer.entries.filter((entry) => entry.pageUrl === pageUrl);
           discarded = removeManualEditEntries(process.cwd(), (entry) => entry.pageUrl === pageUrl);
@@ -1753,12 +2274,15 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
           discardedEntries = buffer.entries;
           discarded = truncateManualEditsBuffer(process.cwd());
         }
+
         canceledApplyEvents = cancelPendingManualApplyEvents(pageUrl);
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'discard_failed', message: err.message }));
+
         return;
       }
+
       const { totalCount, perPage } = countPendingByPage(process.cwd());
       recordManualEditActivity('manual_edit_discarded', {
         pageUrl,
@@ -1774,6 +2298,7 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
       });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ discarded, entries: discardedEntries, canceledApplyEvents, totalCount, perPage }));
+
       return;
     }
 
@@ -1781,78 +2306,109 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
     if (p === '/manual-edit' && req.method === 'POST') {
       res.writeHead(410, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: '/manual-edit is removed; use /manual-edit-stash and /manual-edit-commit for staged copy edits.' }));
+
       return;
     }
 
     // --- Browser→server events (replaces WebSocket messages) ---
     if (p === '/events' && req.method === 'POST') {
       let body = '';
-      req.on('data', (c) => { body += c; });
+      req.on('data', (c) => {
+ body += c; 
+});
       req.on('end', () => {
         let msg;
-        try { msg = JSON.parse(body); } catch {
+
+        try {
+ msg = JSON.parse(body); 
+} catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid JSON' }));
+
           return;
         }
+
         if (msg.token !== state.token) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Unauthorized' }));
+
           return;
         }
+
         // Defense in depth: manual copy edits must use the staged stash/apply
         // endpoints. The direct Save event path is disabled in the browser.
         if (msg.type === 'manual_edits') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'manual_edits must POST to /manual-edit-stash, not /events' }));
+
           return;
         }
+
         if (msg.type === 'manual_edit_apply') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'manual_edit_apply is disabled; use /manual-edit-stash then /manual-edit-commit' }));
+
           return;
         }
+
         const error = validateEvent(msg);
+
         if (error) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error }));
+
           return;
         }
+
         if (state.sessionStore && msg.id) {
           try {
             state.sessionStore.appendEvent(msg);
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'session_store_append_failed', message: err.message }));
+
             return;
           }
         }
+
         if (msg.type !== 'checkpoint') {
           enqueueEvent(msg);
         }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       });
+
       return;
     }
 
     // --- Stop ---
     if (p === '/stop') {
       const token = url.searchParams.get('token');
-      if (token !== state.token) { res.writeHead(401); res.end('Unauthorized'); return; }
+
+      if (token !== state.token) {
+ res.writeHead(401); res.end('Unauthorized');
+
+ return; 
+}
+
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('stopping');
       shutdown();
+
       return;
     }
 
     // --- Agent poll ---
     if (p === '/poll' && req.method === 'GET') {
       handlePollGet(req, res, url);
+
       return;
     }
+
     if (p === '/poll' && req.method === 'POST') {
       handlePollPost(req, res);
+
       return;
     }
 
@@ -1866,24 +2422,34 @@ function createRequestHandler({ detectScript, sessionPath, livePath }) {
 
 function handlePollGet(req, res, url) {
   const token = url.searchParams.get('token');
+
   if (token !== state.token) {
     res.writeHead(401, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Unauthorized' }));
+
     return;
   }
+
   state.lastPollAt = Date.now();
   const timeout = parseInt(url.searchParams.get('timeout') || DEFAULT_POLL_TIMEOUT, 10);
   const leaseMs = parseInt(url.searchParams.get('leaseMs') || '30000', 10);
   const available = findAvailablePendingEvent();
+
   if (available) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(leaseEvent(available, leaseMs)));
+
     return;
   }
+
   const poll = { resolve, leaseMs };
   const timer = setTimeout(() => {
     const idx = state.pendingPolls.indexOf(poll);
-    if (idx !== -1) state.pendingPolls.splice(idx, 1);
+
+    if (idx !== -1) {
+state.pendingPolls.splice(idx, 1);
+}
+
     broadcastAgentPollingIfChanged();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ type: 'timeout' }));
@@ -1900,29 +2466,44 @@ function handlePollGet(req, res, url) {
   req.on('close', () => {
     clearTimeout(timer);
     const idx = state.pendingPolls.indexOf(poll);
-    if (idx !== -1) state.pendingPolls.splice(idx, 1);
+
+    if (idx !== -1) {
+state.pendingPolls.splice(idx, 1);
+}
+
     broadcastAgentPollingIfChanged();
   });
 }
 
 function handlePollPost(req, res) {
   let body = '';
-  req.on('data', (c) => { body += c; });
+  req.on('data', (c) => {
+ body += c; 
+});
   req.on('end', () => {
     let msg;
-    try { msg = JSON.parse(body); } catch {
+
+    try {
+ msg = JSON.parse(body); 
+} catch {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Invalid JSON' }));
+
       return;
     }
+
     if (msg.token !== state.token) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
+
       return;
     }
+
     const pendingApplyDeferred = state.pendingApplyDeferreds.get(msg.id);
+
     if (pendingApplyDeferred) {
       const validation = validateManualApplyResultMessage(msg, pendingApplyDeferred);
+
       if (!validation.ok) {
         recordManualEditActivity('manual_edit_apply_reply_invalid', {
           id: msg.id,
@@ -1934,8 +2515,10 @@ function handlePollPost(req, res) {
         });
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(validation.body));
+
         return;
       }
+
       recordManualEditActivity('manual_edit_apply_reply_received', {
         id: msg.id,
         pageUrl: pendingApplyDeferred.pageUrl,
@@ -1952,8 +2535,10 @@ function handlePollPost(req, res) {
       flushPendingPolls();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
+
       return;
     }
+
     if (state.timedOutApplyIds.has(msg.id)) {
       const rollback = rollbackTimedOutApplyReply(msg);
       recordManualEditActivity('manual_edit_apply_stale_reply_rejected', {
@@ -1963,18 +2548,26 @@ function handlePollPost(req, res) {
       });
       res.writeHead(409, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'stale_manual_edit_apply_reply', ...rollback }));
+
       return;
     }
+
     const acknowledgedEvent = acknowledgePendingEvent(msg.id);
     let skipJournalReply = false;
     let existingSession = null;
+
     if (!acknowledgedEvent && state.sessionStore && msg.id) {
       try {
         existingSession = state.sessionStore.getSnapshot(msg.id, { includeCompleted: true });
-        if (!existingSession?.updatedAt) existingSession = null;
+
+        if (!existingSession?.updatedAt) {
+existingSession = null;
+}
+
         skipJournalReply = existingSession?.phase === 'completed' || existingSession?.phase === 'discarded';
       } catch { /* fall through and record the reply normally */ }
     }
+
     if (!acknowledgedEvent && !existingSession) {
       recordManualEditActivity('manual_edit_poll_reply_unknown', {
         id: msg.id || null,
@@ -1985,8 +2578,10 @@ function handlePollPost(req, res) {
         error: msg.id ? 'unknown_poll_reply_id' : 'missing_poll_reply_id',
         id: msg.id,
       }));
+
       return;
     }
+
     if (state.sessionStore && msg.id && !skipJournalReply) {
       try {
         const eventType = msg.type === 'steer_done'
@@ -2008,6 +2603,7 @@ function handlePollPost(req, res) {
         });
       } catch { /* keep reply path best-effort; browser still needs SSE */ }
     }
+
     flushPendingPolls();
     // Forward the reply to the browser via SSE
     broadcast({ type: msg.type || 'done', id: msg.id, message: msg.message, file: msg.file, data: msg.data });
@@ -2024,16 +2620,37 @@ let httpServer = null;
 
 function shutdown() {
   removeLiveServerInfo(process.cwd());
-  if (state.leaseTimer) clearTimeout(state.leaseTimer);
+
+  if (state.leaseTimer) {
+clearTimeout(state.leaseTimer);
+}
+
   state.leaseTimer = null;
+
   if (state.sessionDir) {
-    try { fs.rmSync(state.sessionDir, { recursive: true, force: true }); } catch {}
+    try {
+ fs.rmSync(state.sessionDir, { recursive: true, force: true }); 
+} catch {}
   }
-  for (const res of state.sseClients) { try { res.end(); } catch {} }
+
+  for (const res of state.sseClients) {
+ try {
+ res.end(); 
+} catch {} 
+}
+
   state.sseClients.clear();
-  for (const poll of state.pendingPolls) poll.resolve({ type: 'exit' });
+
+  for (const poll of state.pendingPolls) {
+poll.resolve({ type: 'exit' });
+}
+
   state.pendingPolls.length = 0;
-  if (httpServer) httpServer.close();
+
+  if (httpServer) {
+httpServer.close();
+}
+
   process.exit(0);
 }
 
@@ -2077,24 +2694,32 @@ Endpoints:
 
 if (args.includes('stop')) {
   const keepInject = args.includes('--keep-inject');
+
   try {
     const { info } = readLiveServerInfo(process.cwd()) || {};
     const res = await fetch(`http://localhost:${info.port}/stop?token=${info.token}`);
-    if (res.ok) console.log(`Stopped live server on port ${info.port}.`);
+
+    if (res.ok) {
+console.log(`Stopped live server on port ${info.port}.`);
+}
   } catch {
     console.log('No running live server found.');
   }
+
   if (!keepInject) {
     const injectPath = path.join(__dirname, 'live-inject.mjs');
+
     try {
       const out = execFileSync(process.execPath, [injectPath, '--remove'], {
         encoding: 'utf-8',
         cwd: process.cwd(),
       });
       const line = out.trim().split('\n').filter(Boolean).pop();
+
       if (line) {
         try {
           const j = JSON.parse(line);
+
           if (j.removed === true) {
             console.log(`Removed live script tag from ${j.file}.`);
           }
@@ -2110,6 +2735,7 @@ if (args.includes('stop')) {
       console.warn(`Note: could not remove live script tag (${detail.split('\n')[0]})`);
     }
   }
+
   process.exit(0);
 }
 
@@ -2127,32 +2753,40 @@ if (args.includes('--background')) {
 
   // Poll for the PID file (the child writes it once the HTTP server is listening).
   const deadline = Date.now() + 10_000;
+
   while (Date.now() < deadline) {
     try {
       const { info } = readLiveServerInfo(process.cwd()) || {};
+
       if (info.pid !== process.pid) {
         // Output JSON so the agent can read port + token from stdout.
         console.log(JSON.stringify(info));
         process.exit(0);
       }
     } catch { /* not ready yet */ }
+
     await new Promise(r => setTimeout(r, 200));
   }
+
   console.error('Timed out waiting for live server to start.');
   process.exit(1);
 }
 
 // Check for existing session
 const existingRecord = readLiveServerInfo(process.cwd());
+
 if (existingRecord?.info) {
   const existing = existingRecord.info;
+
   try {
     process.kill(existing.pid, 0);
     console.error(`Live server already running on port ${existing.port} (pid ${existing.pid}).`);
     console.error('Stop it first with: node ' + path.basename(fileURLToPath(import.meta.url)) + ' stop');
     process.exit(1);
   } catch {
-    try { fs.unlinkSync(existingRecord.path); } catch {}
+    try {
+ fs.unlinkSync(existingRecord.path); 
+} catch {}
   }
 }
 

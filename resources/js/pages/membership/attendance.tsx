@@ -1,6 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarArrowDown, CalendarArrowUp, FilterX, ListFilter, Search, Users } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,11 +74,11 @@ type PageProps = {
 };
 
 const DATE_PRESETS = [
-    { label: 'Today', days: 0 },
-    { label: 'This Week', days: null, type: 'week' as const },
-    { label: 'This Month', days: null, type: 'month' as const },
-    { label: 'Last 30 Days', days: 30 },
-    { label: 'Last 90 Days', days: 90 },
+    { label: 'today', days: 0 },
+    { label: 'this_week', days: null, type: 'week' as const },
+    { label: 'this_month', days: null, type: 'month' as const },
+    { label: 'last_30', days: 30 },
+    { label: 'last_90', days: 90 },
 ];
 
 const METHOD_BADGES: Record<string, string> = {
@@ -87,6 +89,7 @@ const METHOD_BADGES: Record<string, string> = {
 };
 
 export default function AttendanceHistory() {
+    const { t } = useTranslation();
     const { logs, member, members, summary, filters } = usePage<PageProps>().props;
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -123,7 +126,11 @@ export default function AttendanceHistory() {
             date_from: from || undefined,
             date_to: to || undefined,
         };
-        if (member) params.member_id = member.id;
+
+        if (member) {
+params.member_id = member.id;
+}
+
         navigate(params);
     }, [navigate, member]);
 
@@ -159,62 +166,96 @@ export default function AttendanceHistory() {
         setDateFrom('');
         setDateTo('');
         setFilterOpen(false);
-        if (member) navigate({ member_id: member.id });
+
+        if (member) {
+navigate({ member_id: member.id });
+}
     }, [navigate, member]);
 
     const handlePageChange = useCallback((page: number) => {
         const params: Record<string, string | number | undefined> = { page };
-        if (member) params.member_id = member.id;
-        if (filters.date_from) params.date_from = filters.date_from;
-        if (filters.date_to) params.date_to = filters.date_to;
+
+        if (member) {
+params.member_id = member.id;
+}
+
+        if (filters.date_from) {
+params.date_from = filters.date_from;
+}
+
+        if (filters.date_to) {
+params.date_to = filters.date_to;
+}
+
         navigate(params);
     }, [navigate, member, filters.date_from, filters.date_to]);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false);
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+setShowResults(false);
+}
         }
         document.addEventListener('mousedown', handleClickOutside);
+
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (searchQuery.length < 1) { setSearchResults([]); setShowResults(false); return; }
+        if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+}
+
+        if (searchQuery.length < 1) {
+ setSearchResults([]); setShowResults(false);
+
+ return; 
+}
 
         debounceRef.current = setTimeout(async () => {
             setSearching(true);
+
             try {
                 const res = await fetch(`/membership/attendance/search?q=${encodeURIComponent(searchQuery)}`);
                 const data = await res.json();
                 setSearchResults(data);
                 setShowResults(true);
-            } catch { setSearchResults([]); }
-            finally { setSearching(false); }
+            } catch {
+ setSearchResults([]); 
+} finally {
+ setSearching(false); 
+}
         }, 300);
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+
+        return () => {
+ if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+} 
+};
     }, [searchQuery]);
 
     useEffect(() => {
-        if (member) setSearchQuery(`${member.first_name} ${member.last_name}`);
+        if (member) {
+setSearchQuery(`${member.first_name} ${member.last_name}`);
+}
     }, [member]);
 
     return (
         <>
-            <Head title="Attendance History" />
+            <Head title={t('membership.attendance.title')} />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Attendance History"
-                    description="View detailed check-in and check-out records for any member."
+                    title={t('membership.attendance.title')}
+                    description={t('membership.attendance.description')}
                 />
 
                 <div className="relative" ref={searchRef}>
-                    <Label className="text-xs font-medium text-muted-foreground">Select Member</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{t('membership.attendance.select_member')}</Label>
                     <div className="relative mt-1.5">
                         <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                         <Input
-                            placeholder="Search by name or email..."
+                            placeholder={t('membership.attendance.search_placeholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9"
@@ -268,16 +309,16 @@ export default function AttendanceHistory() {
                                     <DialogTrigger asChild>
                                         <Button variant="outline" size="sm" className="gap-1.5">
                                             <ListFilter className="size-3.5" />
-                                            Filters
+                                            {t('membership.attendance.filters')}
                                             {hasActiveFilters && <span className="bg-primary text-primary-foreground ml-0.5 flex size-4 items-center justify-center rounded-full text-[10px] font-bold">!</span>}
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-md">
                                         <DialogHeader>
-                                            <DialogTitle>Date Filters</DialogTitle>
-                                            <DialogDescription>
-                                                Filter attendance records by date range for {member.first_name} {member.last_name}.
-                                            </DialogDescription>
+                                        <DialogTitle>{t('membership.attendance.date_filters')}</DialogTitle>
+                                        <DialogDescription>
+                                            {t('membership.attendance.date_description', { name: `${member.first_name} ${member.last_name}` })}
+                                        </DialogDescription>
                                         </DialogHeader>
 
                                         <div className="space-y-4">
@@ -288,7 +329,7 @@ export default function AttendanceHistory() {
                                                         onClick={() => handlePreset(preset)}
                                                         className="rounded-none border bg-transparent px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                                                     >
-                                                        {preset.label}
+                                                        {t(`membership.attendance.${preset.label}`)}
                                                     </button>
                                                 ))}
                                             </div>
@@ -297,7 +338,7 @@ export default function AttendanceHistory() {
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="filter-from" className="text-xs">From</Label>
+                                                    <Label htmlFor="filter-from" className="text-xs">{t('membership.attendance.from')}</Label>
                                                     <Input
                                                         id="filter-from"
                                                         type="date"
@@ -306,7 +347,7 @@ export default function AttendanceHistory() {
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="filter-to" className="text-xs">To</Label>
+                                                    <Label htmlFor="filter-to" className="text-xs">{t('membership.attendance.to')}</Label>
                                                     <Input
                                                         id="filter-to"
                                                         type="date"
@@ -321,11 +362,11 @@ export default function AttendanceHistory() {
                                             {(dateFrom || dateTo) && (
                                                 <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5">
                                                     <FilterX className="size-3.5" />
-                                                    Clear
+                                                    {t('membership.attendance.clear')}
                                                 </Button>
                                             )}
                                             <Button size="sm" onClick={() => applyDateFilter(dateFrom, dateTo)}>
-                                                Apply Filters
+                                                {t('membership.attendance.apply')}
                                             </Button>
                                         </DialogFooter>
                                     </DialogContent>
@@ -337,18 +378,18 @@ export default function AttendanceHistory() {
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Visit Overview</p>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('membership.attendance.visit_overview')}</p>
                                     </div>
                                     <div className="p-4">
-                                        <p className="text-[11px] text-muted-foreground">Total Visits</p>
+                                        <p className="text-[11px] text-muted-foreground">{t('membership.attendance.total_visits')}</p>
                                         <p className="mt-0.5 text-3xl font-bold tracking-tight">{summary.total_visits}</p>
                                         <div className="mt-3 flex items-center gap-4 border-t pt-3 text-sm">
                                             <div>
-                                                <p className="text-[11px] text-muted-foreground">Completed</p>
+                                                <p className="text-[11px] text-muted-foreground">{t('membership.attendance.completed')}</p>
                                                 <p className="mt-0.5 text-lg font-bold">{summary.completed_visits}</p>
                                             </div>
                                             <div>
-                                                <p className="text-[11px] text-muted-foreground">Avg Duration</p>
+                                                <p className="text-[11px] text-muted-foreground">{t('membership.attendance.avg_duration')}</p>
                                                 <p className="mt-0.5 text-lg font-bold">{summary.avg_duration_minutes > 0 ? `${Math.round(summary.avg_duration_minutes)}m` : '—'}</p>
                                             </div>
                                         </div>
@@ -357,14 +398,14 @@ export default function AttendanceHistory() {
 
                                 <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Consistency</p>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('membership.attendance.consistency')}</p>
                                     </div>
                                     <div className="p-4">
-                                        <p className="text-[11px] text-muted-foreground">Unique Days</p>
+                                        <p className="text-[11px] text-muted-foreground">{t('membership.attendance.unique_days')}</p>
                                         <p className="mt-0.5 text-3xl font-bold tracking-tight">{summary.unique_days}</p>
                                         <div className="mt-3 flex items-center gap-4 border-t pt-3 text-sm">
                                             <div>
-                                                <p className="text-[11px] text-muted-foreground">Current Streak</p>
+                                                <p className="text-[11px] text-muted-foreground">{t('membership.attendance.current_streak')}</p>
                                                 <p className={`mt-0.5 text-lg font-bold ${
                                                     summary.current_streak >= 5 ? 'text-emerald-600' : summary.current_streak >= 2 ? 'text-amber-600' : 'text-muted-foreground'
                                                 }`}>{summary.current_streak}d</p>
@@ -375,12 +416,12 @@ export default function AttendanceHistory() {
 
                                 <div className="rounded-none border bg-card">
                                     <div className="border-b bg-muted/20 px-4 py-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Behavior</p>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('membership.attendance.behavior')}</p>
                                     </div>
                                     <div className="p-4">
-                                        <p className="text-[11px] text-muted-foreground">Top Check-in Method</p>
+                                        <p className="text-[11px] text-muted-foreground">{t('membership.attendance.top_method')}</p>
                                         <p className="mt-0.5 text-2xl font-bold tracking-tight">{summary.most_frequent_method.replace('_', ' ')}</p>
-                                        <p className="mt-1 text-[11px] text-muted-foreground">Most used across this period</p>
+                                        <p className="mt-1 text-[11px] text-muted-foreground">{t('membership.attendance.most_used')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -390,8 +431,8 @@ export default function AttendanceHistory() {
                             <CardHeader className="border-b bg-muted/20 px-4 py-3">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className="text-sm font-semibold">Check-in Logs</CardTitle>
-                                        <CardDescription className="text-xs">{logs.total} record{logs.total !== 1 ? 's' : ''}</CardDescription>
+                                        <CardTitle className="text-sm font-semibold">{t('membership.attendance.checkin_logs')}</CardTitle>
+                                        <CardDescription className="text-xs">{logs.total} {t(logs.total === 1 ? 'membership.attendance.record' : 'membership.attendance.records')}</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -399,12 +440,12 @@ export default function AttendanceHistory() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent">
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Date</TableHead>
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Check In</TableHead>
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Check Out</TableHead>
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Duration</TableHead>
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Method</TableHead>
-                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">Status</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.date')}</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.check_in')}</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.check_out')}</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.duration')}</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.method')}</TableHead>
+                                            <TableHead className="h-9 px-4 text-[11px] font-semibold">{t('membership.attendance.status')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -413,8 +454,8 @@ export default function AttendanceHistory() {
                                                 <TableCell colSpan={6} className="py-16 text-center">
                                                     <div className="flex flex-col items-center gap-1">
                                                         <CalendarArrowUp className="text-muted-foreground size-8" />
-                                                        <p className="text-sm text-muted-foreground">No records found</p>
-                                                        <p className="text-xs text-muted-foreground/60">Try adjusting the date range or select a different member.</p>
+                                                        <p className="text-sm text-muted-foreground">{t('membership.attendance.no_records')}</p>
+                                                        <p className="text-xs text-muted-foreground/60">{t('membership.attendance.try_adjusting')}</p>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -431,7 +472,7 @@ export default function AttendanceHistory() {
                                                         {log.check_out_time ? (
                                                             <span className="text-sm">{log.check_out_time}</span>
                                                         ) : (
-                                                            <Badge variant="secondary" className="text-[10px] font-normal">In progress</Badge>
+                                                            <Badge variant="secondary" className="text-[10px] font-normal">{t('membership.attendance.in_progress')}</Badge>
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="px-4 py-3">
@@ -468,7 +509,7 @@ export default function AttendanceHistory() {
                             {logs.last_page > 1 && (
                                 <div className="flex items-center justify-between border-t px-4 py-3">
                                     <p className="text-xs text-muted-foreground/60">
-                                        Page {logs.current_page} of {logs.last_page}
+                                        {t('membership.attendance.page', { current: logs.current_page, total: logs.last_page })}
                                     </p>
                                     <div className="flex gap-1.5">
                                         <Button
@@ -477,7 +518,7 @@ export default function AttendanceHistory() {
                                             disabled={logs.current_page <= 1}
                                             onClick={() => handlePageChange(logs.current_page - 1)}
                                         >
-                                            Previous
+                                            {t('membership.attendance.previous')}
                                         </Button>
                                         <Button
                                             size="sm"
@@ -485,7 +526,7 @@ export default function AttendanceHistory() {
                                             disabled={logs.current_page >= logs.last_page}
                                             onClick={() => handlePageChange(logs.current_page + 1)}
                                         >
-                                            Next
+                                            {t('membership.attendance.next')}
                                         </Button>
                                     </div>
                                 </div>
@@ -497,9 +538,9 @@ export default function AttendanceHistory() {
                         <CardContent className="flex flex-col items-center gap-3 py-16">
                             <Users className="text-muted-foreground/40 size-12" />
                             <div className="text-center">
-                                <p className="text-sm font-medium text-muted-foreground">No member selected</p>
+                                <p className="text-sm font-medium text-muted-foreground">{t('membership.attendance.no_member')}</p>
                                 <p className="mt-0.5 text-xs text-muted-foreground/60">
-                                    Search and select a member above to view their attendance history.
+                                    {t('membership.attendance.no_member_desc')}
                                 </p>
                             </div>
                         </CardContent>
@@ -510,4 +551,4 @@ export default function AttendanceHistory() {
     );
 }
 
-AttendanceHistory.layout = { breadcrumbs: [{ title: 'Attendance History', href: '/membership/attendance' }] };
+AttendanceHistory.layout = { breadcrumbs: [{ title: i18n.t('membership.attendance.title'), href: '/membership/attendance' }] };

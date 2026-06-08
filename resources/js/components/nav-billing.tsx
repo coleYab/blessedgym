@@ -9,6 +9,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,17 +27,17 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
-const billingItems = [
-  { title: 'Flexible Plan Creation', href: '/billing/plans', icon: Receipt },
-  { title: 'Invoice Generation', href: '/billing/invoices', icon: FileText },
-  { title: 'Payment Collection', href: '/billing/payments', icon: CreditCard },
-  { title: 'Outstanding Balances', href: '/billing/balances', icon: AlertTriangle },
-  { title: 'Freeze / Pause Membership', href: '/billing/freeze', icon: PauseCircle },
-  { title: 'Payment History', href: '/billing/history', icon: History },
-];
-
 export function NavBilling() {
+  const { t } = useTranslation();
   const { isCurrentUrl } = useCurrentUrl();
+  const billingItems = [
+    { title: t('nav.billing.plans'), href: '/billing/plans', icon: Receipt },
+    { title: t('nav.billing.invoices'), href: '/billing/invoices', icon: FileText },
+    { title: t('nav.billing.payments'), href: '/billing/payments', icon: CreditCard },
+    { title: t('nav.billing.balances'), href: '/billing/balances', icon: AlertTriangle },
+    { title: t('nav.billing.freeze'), href: '/billing/freeze', icon: PauseCircle },
+    { title: t('nav.billing.history'), href: '/billing/history', icon: History },
+  ];
   const [open, setOpen] = useState(
     billingItems.some((item) => isCurrentUrl(item.href)),
   );
@@ -47,7 +48,7 @@ export function NavBilling() {
         <SidebarGroupLabel asChild>
           <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2">
             <CreditCard className="size-4" />
-            <span className="flex-1 text-left text-xs font-medium">Billing & Pricing</span>
+            <span className="flex-1 text-left text-xs font-medium">{t('nav.billing.label')}</span>
             <ChevronDown className="size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>

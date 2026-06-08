@@ -1,4 +1,7 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
+import { useState, useMemo } from 'react';
 import PaymentController from '@/actions/App/Http/Controllers/Billing/PaymentController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -16,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState, useMemo } from 'react';
 
 type Plan = {
   id: number;
@@ -69,6 +71,7 @@ const durationUnitLabels: Record<string, string> = {
 };
 
 export default function Payments() {
+  const { t } = useTranslation();
   const { payments, plans, members } = usePage<PageProps>().props;
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('Mobile_Money');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
@@ -80,24 +83,28 @@ export default function Payments() {
   );
 
   const calculatedRequired = useMemo(() => {
-    if (!selectedPlan || !durationValue) return 0;
+    if (!selectedPlan || !durationValue) {
+return 0;
+}
+
     const multiplier = Number(durationValue) / selectedPlan.duration_value;
+
     return selectedPlan.base_price * multiplier;
   }, [selectedPlan, durationValue]);
 
   return (
     <>
-      <Head title="Payment Collection" />
+      <Head title={t('billing.payments.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Payment Collection"
-          description="Record payments by selecting a member, plan, and duration. The required amount is calculated automatically."
+          title={t('billing.payments.title')}
+          description={t('billing.payments.description')}
         />
 
         <Card>
           <CardHeader>
-            <CardTitle>Record Payment</CardTitle>
+            <CardTitle>{t('billing.payments.record')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form
@@ -109,7 +116,7 @@ export default function Payments() {
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
-                      <Label htmlFor="member_id">Member</Label>
+                      <Label htmlFor="member_id">{t('billing.payments.member')}</Label>
                       <select
                         id="member_id"
                         name="member_id"
@@ -359,7 +366,7 @@ export default function Payments() {
 
                   <div className="flex items-center gap-4 pt-2">
                     <Button disabled={processing}>
-                      {processing ? 'Processing...' : 'Record Payment'}
+                      {processing ? t('billing.payments.record') : t('billing.payments.record')}
                     </Button>
                   </div>
                 </>
@@ -378,13 +385,13 @@ export default function Payments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Method</TableHead>
+                  <TableHead>{t('billing.payments.method')}</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Member</TableHead>
+                  <TableHead>{t('billing.payments.member')}</TableHead>
                   <TableHead>Required</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>{t('billing.payments.date')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -392,7 +399,7 @@ export default function Payments() {
                 {payments.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
-                      No payments recorded yet.
+                      {t('billing.payments.no_payments')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -430,7 +437,9 @@ export default function Payments() {
                         method="post"
                         className="inline"
                         onSubmit={(e) => {
-                          if (!confirm('Delete this payment record?')) e.preventDefault();
+                          if (!confirm('Delete this payment record?')) {
+e.preventDefault();
+}
                         }}
                       >
                         <input type="hidden" name="_method" value="delete" />
@@ -452,7 +461,7 @@ export default function Payments() {
 
 Payments.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/payments' },
-    { title: 'Payment Collection', href: '/billing/payments' },
+    { title: i18n.t('billing.billing'), href: '/billing/payments' },
+    { title: i18n.t('billing.payments.title'), href: '/billing/payments' },
   ],
 };

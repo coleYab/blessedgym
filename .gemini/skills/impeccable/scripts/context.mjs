@@ -42,17 +42,23 @@ export function resolveContextDir(cwd = process.cwd()) {
   if (firstExisting(cwd, [...PRODUCT_NAMES, ...DESIGN_NAMES])) {
     return cwd;
   }
+
   for (const rel of FALLBACK_DIRS) {
     const candidate = path.resolve(cwd, rel);
+
     if (firstExisting(candidate, [...PRODUCT_NAMES, ...DESIGN_NAMES])) {
       return candidate;
     }
   }
+
   const envDir = process.env.IMPECCABLE_CONTEXT_DIR;
+
   if (envDir && envDir.trim()) {
     const trimmed = envDir.trim();
+
     return path.isAbsolute(trimmed) ? trimmed : path.resolve(cwd, trimmed);
   }
+
   return cwd;
 }
 
@@ -62,6 +68,7 @@ export function loadContext(cwd = process.cwd()) {
   const designPath = firstExisting(contextDir, DESIGN_NAMES);
   const product = productPath ? safeRead(productPath) : null;
   const design = designPath ? safeRead(designPath) : null;
+
   return {
     hasProduct: !!product,
     product,
@@ -76,8 +83,12 @@ export function loadContext(cwd = process.cwd()) {
 function firstExisting(dir, names) {
   for (const name of names) {
     const abs = path.join(dir, name);
-    if (fs.existsSync(abs)) return abs;
+
+    if (fs.existsSync(abs)) {
+return abs;
+}
   }
+
   return null;
 }
 
@@ -95,19 +106,32 @@ function safeRead(p) {
  * follows it. Returns null when the file is legacy / register-less.
  */
 export function extractRegister(product) {
-  if (!product) return null;
+  if (!product) {
+return null;
+}
+
   const lines = product.split('\n');
+
   for (let i = 0; i < lines.length; i++) {
     if (/^##\s+Register\b/i.test(lines[i].trim())) {
       for (let j = i + 1; j < lines.length; j++) {
         const next = lines[j].trim();
-        if (!next) continue;
+
+        if (!next) {
+continue;
+}
+
         const word = next.toLowerCase();
-        if (word === 'brand' || word === 'product') return word;
+
+        if (word === 'brand' || word === 'product') {
+return word;
+}
+
         return null;
       }
     }
   }
+
   return null;
 }
 
@@ -122,6 +146,7 @@ function readLocalSkillVersion() {
     const skillMd = path.join(here, '..', 'SKILL.md');
     const content = fs.readFileSync(skillMd, 'utf-8');
     const match = content.match(/^version:\s*(.+)$/m);
+
     return match ? match[1].trim().replace(/^["']|["']$/g, '') : null;
   } catch {
     return null;
@@ -149,18 +174,28 @@ function writeUpdateCache(cache) {
 function compareSemver(a, b) {
   const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
   const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const diff = (pa[i] || 0) - (pb[i] || 0);
-    if (diff !== 0) return diff;
+
+    if (diff !== 0) {
+return diff;
+}
   }
+
   return 0;
 }
 
 async function fetchLatestSkillVersion() {
   try {
     const res = await fetch(`${UPDATE_HOST}/api/version`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-    if (!res.ok) return null;
+
+    if (!res.ok) {
+return null;
+}
+
     const data = await res.json();
+
     return typeof data?.skills === 'string' ? data.skills : null;
   } catch {
     return null; // offline, sandboxed, timed out, or bad JSON: all non-fatal
@@ -186,9 +221,15 @@ function buildUpdateDirective(localVersion, latestVersion) {
  */
 async function computeUpdateDirective(now = Date.now()) {
   try {
-    if (process.env.IMPECCABLE_NO_UPDATE_CHECK) return null;
+    if (process.env.IMPECCABLE_NO_UPDATE_CHECK) {
+return null;
+}
+
     const localVersion = readLocalSkillVersion();
-    if (!localVersion) return null;
+
+    if (!localVersion) {
+return null;
+}
 
     const cache = readUpdateCache();
 
@@ -197,17 +238,25 @@ async function computeUpdateDirective(now = Date.now()) {
     if (!cache.lastCheck || now - cache.lastCheck > CHECK_INTERVAL_MS) {
       const latest = await fetchLatestSkillVersion();
       cache.lastCheck = now;
-      if (latest) cache.latestVersion = latest;
+
+      if (latest) {
+cache.latestVersion = latest;
+}
+
       writeUpdateCache(cache);
     }
 
     const latest = cache.latestVersion;
-    if (!latest || compareSemver(latest, localVersion) <= 0) return null;
+
+    if (!latest || compareSemver(latest, localVersion) <= 0) {
+return null;
+}
 
     // Anti-nag: surface a given version at most once per RENOTIFY window.
     if (cache.notifiedVersion === latest && cache.notifiedAt && now - cache.notifiedAt < RENOTIFY_INTERVAL_MS) {
       return null;
     }
+
     cache.notifiedVersion = latest;
     cache.notifiedAt = now;
     writeUpdateCache(cache);
@@ -230,20 +279,31 @@ async function cli() {
       'Stop the current task, load reference/init.md, and follow its ' +
       'instructions to write PRODUCT.md before resuming.',
     ];
-    if (updateDirective) parts.push(updateDirective);
+
+    if (updateDirective) {
+parts.push(updateDirective);
+}
+
     process.stdout.write(parts.join('\n\n---\n\n') + '\n');
     process.exit(0);
   }
+
   const parts = [`# PRODUCT.md\n\n${ctx.product.trim()}`];
+
   if (ctx.hasDesign) {
     parts.push(`# DESIGN.md\n\n${ctx.design.trim()}`);
   }
+
   const register = extractRegister(ctx.product);
   const next = register
     ? `NEXT STEP: This project's register is \`${register}\`. You MUST now read \`reference/${register}.md\` before producing any design output.`
     : `NEXT STEP: You MUST now read the matching register reference (\`reference/brand.md\` or \`reference/product.md\`) before producing any design output. Pick based on PRODUCT.md above.`;
   parts.push(next);
-  if (updateDirective) parts.push(updateDirective);
+
+  if (updateDirective) {
+parts.push(updateDirective);
+}
+
   process.stdout.write(parts.join('\n\n---\n\n') + '\n');
 }
 
@@ -253,7 +313,11 @@ async function cli() {
 // invocation (the test harness symlinks the skill dir).
 function invokedAsScript() {
   const arg = process.argv[1];
-  if (!arg) return false;
+
+  if (!arg) {
+return false;
+}
+
   try {
     return fs.realpathSync(arg) === fs.realpathSync(fileURLToPath(import.meta.url));
   } catch {

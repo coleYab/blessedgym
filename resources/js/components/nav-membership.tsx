@@ -9,6 +9,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Collapsible,
   CollapsibleContent,
@@ -27,16 +28,16 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
-const membershipItems = [
-  { title: 'Member Registration', href: '/membership/register', icon: UserPlus },
-  { title: 'Member Checkin', href: '/membership/checkin', icon: Fingerprint },
-  { title: 'Attendance History', href: '/membership/attendance', icon: CalendarCheck },
-  { title: 'Membership Status', href: '/membership/status', icon: Users },
-  { title: 'Analytics', href: '/membership/analytics', icon: BarChart3 },
-];
-
 export function NavMembership() {
+  const { t } = useTranslation();
   const { isCurrentUrl } = useCurrentUrl();
+  const membershipItems = [
+    { title: t('nav.membership.registration'), href: '/membership/register', icon: UserPlus },
+    { title: 'Member Checkin', href: '/membership/checkin', icon: Fingerprint },
+    { title: 'Attendance History', href: '/membership/attendance', icon: CalendarCheck },
+    { title: 'Membership Status', href: '/membership/status', icon: Users },
+    { title: 'Analytics', href: '/membership/analytics', icon: BarChart3 },
+  ];
   const [open, setOpen] = useState(
     membershipItems.some((item) => isCurrentUrl(item.href)),
   );
@@ -47,7 +48,7 @@ export function NavMembership() {
         <SidebarGroupLabel asChild>
           <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2">
             <UserCheck className="size-4" />
-            <span className="flex-1 text-left text-xs font-medium">Membership</span>
+            <span className="flex-1 text-left text-xs font-medium">{t('nav.membership.label')}</span>
             <ChevronDown className="size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>

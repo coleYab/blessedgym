@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { GENERIC_FONTS, OVERUSED_FONTS } from '../../shared/constants.mjs';
-import { isFullPage } from '../../shared/page.mjs';
 import { finding } from '../../findings.mjs';
 import { profileFindings, profileStep, profileStepAsync } from '../../profile/profiler.mjs';
+import { filterByProviders } from '../../registry/antipatterns.mjs';
 import {
   checkElementBorders,
   checkElementClippedOverflow,
@@ -25,7 +24,8 @@ import {
   resolveBackground,
   resolveBorderRadiusPx,
 } from '../../rules/checks.mjs';
-import { filterByProviders } from '../../registry/antipatterns.mjs';
+import { GENERIC_FONTS, OVERUSED_FONTS } from '../../shared/constants.mjs';
+import { isFullPage } from '../../shared/page.mjs';
 import { detectText, runTextContentAnalyzers } from '../regex/detect-text.mjs';
 import {
   StaticDocument,
@@ -38,48 +38,74 @@ function checkStaticPageTypography(document, window) {
   const findings = [];
   const fonts = new Set();
   const overusedFound = new Set();
+
   for (const el of document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, th, dd, blockquote, figcaption, a, button, label, span, div')) {
     const hasText = el.childNodes.some(n => n.nodeType === 3 && n.textContent.trim().length > 0);
-    if (!hasText) continue;
+
+    if (!hasText) {
+continue;
+}
+
     const ff = window.getComputedStyle(el).fontFamily || '';
     const stack = ff.split(',').map(f => f.trim().replace(/^['"]|['"]$/g, '').toLowerCase());
     const primary = stack.find(f => f && !GENERIC_FONTS.has(f));
-    if (!primary) continue;
+
+    if (!primary) {
+continue;
+}
+
     fonts.add(primary);
-    if (OVERUSED_FONTS.has(primary)) overusedFound.add(primary);
+
+    if (OVERUSED_FONTS.has(primary)) {
+overusedFound.add(primary);
+}
   }
+
   for (const font of overusedFound) {
     findings.push({ id: 'overused-font', snippet: `Primary font: ${font}` });
   }
+
   if (fonts.size === 1 && document.querySelectorAll('*').length >= 20) {
     findings.push({ id: 'single-font', snippet: `only font used is ${[...fonts][0]}` });
   }
+
   const sizes = new Set();
+
   for (const el of document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, button, div')) {
     const fontSize = parseFloat(window.getComputedStyle(el).fontSize);
-    if (fontSize >= 8 && fontSize < 200) sizes.add(Math.round(fontSize * 10) / 10);
+
+    if (fontSize >= 8 && fontSize < 200) {
+sizes.add(Math.round(fontSize * 10) / 10);
+}
   }
+
   if (sizes.size >= 3) {
     const sorted = [...sizes].sort((a, b) => a - b);
     const ratio = sorted[sorted.length - 1] / sorted[0];
+
     if (ratio < 2.0) {
       findings.push({ id: 'flat-type-hierarchy', snippet: `Sizes: ${sorted.map(s => s + 'px').join(', ')} (ratio ${ratio.toFixed(1)}:1)` });
     }
   }
+
   return findings;
 }
 
 function checkElementBrokenImage(el) {
   const src = (el.getAttribute && el.getAttribute('src')) ?? el.attribs?.src;
+
   // Missing src attribute entirely
   if (src === undefined || src === null) {
     return [{ id: 'broken-image', snippet: '<img> with no src attribute' }];
   }
+
   const trimmed = String(src).trim();
+
   // Empty or placeholder-only src values
   if (trimmed === '' || trimmed === '#') {
     return [{ id: 'broken-image', snippet: `<img src="${src}">` }];
   }
+
   return [];
 }
 
@@ -108,6 +134,7 @@ async function detectHtml(filePath, options = {}) {
   }, () => fs.readFileSync(filePath, 'utf-8'));
 
   let modules;
+
   try {
     modules = await profileStepAsync(profile, {
       engine: 'static-html',
@@ -121,6 +148,7 @@ async function detectHtml(filePath, options = {}) {
         import('css-tree'),
         import('domutils'),
       ]);
+
       return {
         parseDocument: htmlparser2.parseDocument,
         selectAll: cssSelect.selectAll,
@@ -156,12 +184,15 @@ async function detectHtml(filePath, options = {}) {
     : callback();
 
   const visitedByRule = new Map();
+
   for (const rule of STATIC_ELEMENT_RULES) {
     const elements = document.querySelectorAll(rule.selector);
     visitedByRule.set(rule.id, elements.length);
+
     for (const el of elements) {
       const tag = el.tagName.toLowerCase();
       const style = window.getComputedStyle(el);
+
       for (const f of runElementCheck(rule.id, () => rule.run(el, tag, style, window, customPropMap))) {
         findings.push(finding(f.id, filePath, f.snippet));
       }
@@ -172,26 +203,33 @@ async function detectHtml(filePath, options = {}) {
     const runPageCheck = (ruleId, callback) => profile
       ? profileFindings(profile, { engine: 'static-html', phase: 'page', ruleId, target: filePath }, callback)
       : callback();
+
     for (const f of runPageCheck('typography-rules', () => checkStaticPageTypography(document, window))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     for (const f of runPageCheck('repeated-section-kickers', () => checkRepeatedSectionKickersFromDoc(document, window))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     for (const f of runPageCheck('layout-rules', () => checkPageLayout(document, window))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     for (const f of runPageCheck('cream-palette', () => checkCreamPalette(document, window))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     for (const f of runPageCheck('skipped-heading', () => checkPageQualityFromDoc(document))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     for (const f of runPageCheck('html-patterns', () => checkHtmlPatterns(html).filter(item =>
       item.id !== 'bounce-easing' && item.id !== 'layout-transition'
     ))) {
       findings.push(finding(f.id, filePath, f.snippet));
     }
+
     // Text-content analyzers (em-dash overuse, marketing buzzwords,
     // numbered section markers, aphoristic cadence) live in the regex
     // engine. Call them from here so .html files get the same coverage

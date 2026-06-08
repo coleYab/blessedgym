@@ -3,19 +3,26 @@
  * Print durable recovery status for Impeccable live sessions.
  */
 
-import { createLiveSessionStore } from './live-session-store.mjs';
 import { readLiveServerInfo } from './impeccable-paths.mjs';
 import { manualApplyResumeHint } from './live-resume.mjs';
+import { createLiveSessionStore } from './live-session-store.mjs';
 
 function readServerInfo() {
   return readLiveServerInfo(process.cwd())?.info || null;
 }
 
 async function fetchServerStatus(info) {
-  if (!info) return null;
+  if (!info) {
+return null;
+}
+
   try {
     const res = await fetch(`http://localhost:${info.port}/status?token=${info.token}`);
-    if (!res.ok) return null;
+
+    if (!res.ok) {
+return null;
+}
+
     return await res.json();
   } catch {
     return null;
@@ -48,14 +55,20 @@ export async function statusCli() {
 
 function findPendingManualApply(server, activeSessions) {
   const fromServer = server?.pendingEvents?.find((event) => event?.type === 'manual_edit_apply');
-  if (fromServer) return fromServer;
+
+  if (fromServer) {
+return fromServer;
+}
+
   const fromSession = activeSessions
     ?.map((session) => session.pendingEvent)
     .find((event) => event?.type === 'manual_edit_apply');
+
   return fromSession || null;
 }
 
 const _running = process.argv[1];
+
 if (_running?.endsWith('live-status.mjs') || _running?.endsWith('live-status.mjs/')) {
   statusCli();
 }

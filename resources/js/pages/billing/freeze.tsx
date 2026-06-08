@@ -1,4 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -49,18 +51,19 @@ const reasonLabels: Record<string, string> = {
 };
 
 export default function Freeze() {
+  const { t } = useTranslation();
   const { freezes, members, maxFreezeDays } = usePage<PageProps>().props;
 
   const activeMember = members.find((m) => m.status === 'Active');
 
   return (
     <>
-      <Head title="Freeze / Pause Membership" />
+      <Head title={t('billing.freeze.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Freeze / Pause Membership"
-          description="Temporarily pause memberships. End dates are auto-extended on reactivation."
+          title={t('billing.freeze.title')}
+          description={t('billing.freeze.description')}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -113,7 +116,7 @@ export default function Freeze() {
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="grid gap-2">
-                      <Label htmlFor="member_id">Member</Label>
+                      <Label htmlFor="member_id">{t('billing.freeze.member')}</Label>
                       <select
                         id="member_id"
                         name="member_id"
@@ -133,7 +136,7 @@ export default function Freeze() {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="freeze_reason">Reason</Label>
+                      <Label htmlFor="freeze_reason">{t('billing.freeze.reason')}</Label>
                       <select
                         id="freeze_reason"
                         name="freeze_reason"
@@ -150,7 +153,7 @@ export default function Freeze() {
 
                     <div className="grid gap-2">
                       <Label htmlFor="scheduled_unfreeze_date">
-                        Scheduled Unfreeze Date
+                        {t('billing.freeze.period')}
                       </Label>
                       <Input
                         id="scheduled_unfreeze_date"
@@ -183,10 +186,10 @@ export default function Freeze() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Reason</TableHead>
+                  <TableHead>{t('billing.freeze.member')}</TableHead>
+                  <TableHead>{t('billing.freeze.reason')}</TableHead>
                   <TableHead>Frozen On</TableHead>
-                  <TableHead>Scheduled Unfreeze</TableHead>
+                  <TableHead>{t('billing.freeze.period')}</TableHead>
                   <TableHead>Actual Unfreeze</TableHead>
                   <TableHead>Days Paused</TableHead>
                   <TableHead>Staff ID</TableHead>
@@ -197,7 +200,7 @@ export default function Freeze() {
                 {freezes.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
-                      No freeze records yet.
+                      {t('billing.freeze.no_frozen')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -248,7 +251,7 @@ export default function Freeze() {
                           className="inline"
                         >
                           <Button type="submit" variant="outline" size="sm">
-                            Reactivate
+                            {t('billing.freeze.unfreeze')}
                           </Button>
                         </Form>
                       )}
@@ -266,7 +269,7 @@ export default function Freeze() {
 
 Freeze.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/freeze' },
-    { title: 'Freeze / Pause Membership', href: '/billing/freeze' },
+    { title: i18n.t('billing.billing'), href: '/billing/freeze' },
+    { title: i18n.t('billing.freeze.title'), href: '/billing/freeze' },
   ],
 };

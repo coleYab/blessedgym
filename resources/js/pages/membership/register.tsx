@@ -1,4 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import MemberController from '@/actions/App/Http/Controllers/MemberController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -9,14 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 export default function MemberRegistration() {
+    const { t } = useTranslation();
+
     return (
         <>
             <Head title="Member Registration" />
 
             <div className="flex flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Member Registration"
-                    description="Fill in the details below to register a new member."
+                    title={t('membership.register.title')}
+                    description={t('membership.register.description')}
                 />
 
                 <Form
@@ -29,13 +33,13 @@ export default function MemberRegistration() {
                                 <CardContent className="space-y-6 pt-6">
                                     <div>
                                         <h3 className="mb-4 text-sm font-medium">
-                                            Personal Information
+                                            {t('membership.register.personal_info')}
                                         </h3>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="first_name">
-                                                    First Name
+                                                    {t('membership.register.first_name')}
                                                 </Label>
                                                 <Input
                                                     id="first_name"
@@ -49,7 +53,7 @@ export default function MemberRegistration() {
 
                                             <div className="grid gap-2">
                                                 <Label htmlFor="last_name">
-                                                    Last Name
+                                                    {t('membership.register.last_name')}
                                                 </Label>
                                                 <Input
                                                     id="last_name"
@@ -67,13 +71,13 @@ export default function MemberRegistration() {
 
                                     <div>
                                         <h3 className="mb-4 text-sm font-medium">
-                                            Contact Information
+                                            {t('membership.register.contact_info')}
                                         </h3>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="email">
-                                                    Email Address
+                                                    {t('membership.register.email')}
                                                 </Label>
                                                 <Input
                                                     id="email"
@@ -88,7 +92,7 @@ export default function MemberRegistration() {
 
                                             <div className="grid gap-2">
                                                 <Label htmlFor="phone_number">
-                                                    Phone Number
+                                                    {t('membership.register.phone')}
                                                 </Label>
                                                 <Input
                                                     id="phone_number"
@@ -109,13 +113,13 @@ export default function MemberRegistration() {
 
                                     <div>
                                         <h3 className="mb-4 text-sm font-medium">
-                                            Account Details
+                                            {t('membership.register.account_details')}
                                         </h3>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="date_of_birth">
-                                                    Date of Birth
+                                                    {t('membership.register.dob')}
                                                 </Label>
                                                 <Input
                                                     id="date_of_birth"
@@ -132,7 +136,7 @@ export default function MemberRegistration() {
 
                                             <div className="grid gap-2">
                                                 <Label htmlFor="registration_source">
-                                                    Registration Source
+                                                    {t('membership.register.source')}
                                                 </Label>
                                                 <select
                                                     id="registration_source"
@@ -141,16 +145,16 @@ export default function MemberRegistration() {
                                                     required
                                                 >
                                                     <option value="">
-                                                        Select source...
+                                                        {t('membership.register.select_source')}
                                                     </option>
                                                     <option value="mobile_app">
-                                                        Mobile App
+                                                        {t('membership.register.mobile_app')}
                                                     </option>
                                                     <option value="admin_dashboard">
-                                                        Admin Dashboard
+                                                        {t('membership.register.admin_dashboard')}
                                                     </option>
                                                     <option value="kiosk">
-                                                        Kiosk
+                                                        {t('membership.register.kiosk')}
                                                     </option>
                                                 </select>
                                                 <InputError
@@ -166,13 +170,13 @@ export default function MemberRegistration() {
 
                                     <div>
                                         <h3 className="mb-4 text-sm font-medium">
-                                            Media &amp; Identification
+                                            {t('membership.register.media')}
                                         </h3>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="profile_photo">
-                                                    Profile Photo
+                                                    {t('membership.register.profile_photo')}
                                                 </Label>
                                                 <Input
                                                     id="profile_photo"
@@ -181,7 +185,7 @@ export default function MemberRegistration() {
                                                     accept="image/*"
                                                 />
                                                 <p className="text-xs text-muted-foreground">
-                                                    Optional. Max 2MB.
+                                                    {t('membership.register.photo_optional')}
                                                 </p>
                                                 <InputError
                                                     message={
@@ -192,7 +196,7 @@ export default function MemberRegistration() {
 
                                             <div className="grid gap-2">
                                                 <Label htmlFor="id_document_type">
-                                                    ID Document Type
+                                                    {t('membership.register.id_type')}
                                                 </Label>
                                                 <select
                                                     id="id_document_type"
@@ -200,17 +204,16 @@ export default function MemberRegistration() {
                                                     className="border-input flex h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
                                                 >
                                                     <option value="">
-                                                        Select document
-                                                        type...
+                                                        {t('membership.register.select_doc')}
                                                     </option>
                                                     <option value="National_ID">
-                                                        National ID
+                                                        {t('membership.register.national_id')}
                                                     </option>
                                                     <option value="Passport">
-                                                        Passport
+                                                        {t('membership.register.passport')}
                                                     </option>
                                                     <option value="Drivers_License">
-                                                        Driver&apos;s License
+                                                        {t("membership.register.drivers_license")}
                                                     </option>
                                                 </select>
                                                 <InputError
@@ -223,7 +226,7 @@ export default function MemberRegistration() {
 
                                         <div className="mt-4 grid gap-2">
                                             <Label htmlFor="id_document">
-                                                ID Document Image
+                                                {t('membership.register.id_image')}
                                             </Label>
                                             <Input
                                                 id="id_document"
@@ -232,7 +235,7 @@ export default function MemberRegistration() {
                                                 accept="image/*"
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                Optional. Max 5MB.
+                                                {t('membership.register.id_optional')}
                                             </p>
                                             <InputError
                                                 message={errors.id_document}
@@ -259,7 +262,7 @@ export default function MemberRegistration() {
                                             htmlFor="is_verified"
                                             className="!leading-none"
                                         >
-                                            Mark member as verified
+                                            {t('membership.register.mark_verified')}
                                         </Label>
                                         <InputError
                                             message={errors.is_verified}
@@ -269,8 +272,8 @@ export default function MemberRegistration() {
                                     <div className="flex items-center gap-4 pt-2">
                                         <Button disabled={processing}>
                                             {processing
-                                                ? 'Registering...'
-                                                : 'Register Member'}
+                                                ? t('membership.register.registering')
+                                                : t('membership.register.submit')}
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -286,7 +289,7 @@ export default function MemberRegistration() {
 MemberRegistration.layout = {
     breadcrumbs: [
         {
-            title: 'Member Registration',
+            title: i18n.t('membership.register.title'),
             href: '/membership/register',
         },
     ],

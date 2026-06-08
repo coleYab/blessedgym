@@ -1,4 +1,7 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState } from 'react';
 
 type PaymentRecord = {
   id: number;
@@ -53,16 +55,17 @@ const methodIcons: Record<string, string> = {
 };
 
 export default function PaymentHistory() {
+  const { t } = useTranslation();
   const { payments, members, filters } = usePage<PageProps>().props;
 
   return (
     <>
-      <Head title="Payment History" />
+      <Head title={t('billing.history.title')} />
 
       <div className="flex flex-1 flex-col gap-6 p-4">
         <Heading
-          title="Payment History"
-          description="Chronological ledger of all payments with refund tracking and filters."
+          title={t('billing.history.title')}
+          description={t('billing.history.description')}
         />
 
         <Card>
@@ -168,10 +171,10 @@ export default function PaymentHistory() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Member</TableHead>
+                  <TableHead>{t('billing.history.date')}</TableHead>
+                  <TableHead>{t('billing.history.member')}</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Method</TableHead>
+                  <TableHead>{t('billing.history.method')}</TableHead>
                   <TableHead>Required</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Duration</TableHead>
@@ -184,7 +187,7 @@ export default function PaymentHistory() {
                 {payments.data.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center text-sm text-muted-foreground">
-                      No payments match your filters.
+                      {t('billing.history.no_history')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -346,7 +349,7 @@ function RefundDialog({ payment }: { payment: PaymentRecord }) {
 
 PaymentHistory.layout = {
   breadcrumbs: [
-    { title: 'Billing & Pricing', href: '/billing/history' },
-    { title: 'Payment History', href: '/billing/history' },
+    { title: i18n.t('billing.billing'), href: '/billing/history' },
+    { title: i18n.t('billing.history.title'), href: '/billing/history' },
   ],
 };

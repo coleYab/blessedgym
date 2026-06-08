@@ -1,4 +1,6 @@
 import { Head } from '@inertiajs/react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { dashboard } from '@/routes';
 
 function StatCard({ label, value, subtitle }: { label: string; value: string | number; subtitle?: string }) {
@@ -14,6 +16,8 @@ function StatCard({ label, value, subtitle }: { label: string; value: string | n
 }
 
 function Table({ headers, rows }: { headers: string[]; rows: (string | number | null)[][] }) {
+    const { t } = useTranslation();
+
     return (
         <div className="overflow-x-auto border border-border">
             <table className="w-full text-sm">
@@ -30,7 +34,7 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | number | 
                     {rows.length === 0 ? (
                         <tr>
                             <td colSpan={headers.length} className="px-3 py-6 text-center text-muted-foreground">
-                                No data yet.
+                                {t('dashboard.no_data')}
                             </td>
                         </tr>
                     ) : (
@@ -105,50 +109,52 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ stats, recentCheckins, recentPayments }: DashboardProps) {
+    const { t } = useTranslation();
+
     return (
         <>
             <Head title="Dashboard" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Welcome back. Here is what is happening at Blessed Gym today.
+                        {t('dashboard.description')}
                     </p>
                 </div>
 
                 {stats.expiringSoon > 0 && (
                     <div className="border border-border bg-card p-3 text-sm text-card-foreground">
                         <span className="font-semibold">{stats.expiringSoon}</span>{' '}
-                        {stats.expiringSoon === 1 ? 'membership is' : 'memberships are'} expiring within the next 7 days.
+                        {stats.expiringSoon === 1 ? t('dashboard.expiring') : t('dashboard.expiring_plural')}
                     </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-                    <StatCard label="Active Members" value={stats.activeMembers} subtitle={`${stats.totalMembers} total`} />
-                    <StatCard label="Check-ins Today" value={stats.checkedInToday} />
-                    <StatCard label="Revenue This Month" value={formatCurrency(stats.revenueThisMonth)} />
-                    <StatCard label="Outstanding Balance" value={formatCurrency(stats.outstandingBalance)} />
-                    <StatCard label="Staff Clocked In" value={stats.staffClockedIn} subtitle={`${stats.pendingLeave} pending leave`} />
+                    <StatCard label={t('dashboard.active_members')} value={stats.activeMembers} subtitle={t('dashboard.total', { count: stats.totalMembers })} />
+                    <StatCard label={t('dashboard.checkins_today')} value={stats.checkedInToday} />
+                    <StatCard label={t('dashboard.revenue_month')} value={formatCurrency(stats.revenueThisMonth)} />
+                    <StatCard label={t('dashboard.outstanding_balance')} value={formatCurrency(stats.outstandingBalance)} />
+                    <StatCard label={t('dashboard.staff_clocked')} value={stats.staffClockedIn} subtitle={t('dashboard.pending_leave', { count: stats.pendingLeave })} />
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="flex flex-col gap-2">
-                        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Recent Check-ins</h2>
+                        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t('dashboard.recent_checkins')}</h2>
                         <Table
-                            headers={['Member', 'Time', 'Status', 'Method']}
+                            headers={[t('dashboard.table.member'), t('dashboard.table.time'), t('dashboard.table.status'), t('dashboard.table.method')]}
                             rows={recentCheckins.map((c) => [
                                 c.member,
                                 formatDateTime(c.check_in),
-                                c.check_out ? `Out ${formatTime(c.check_out)}` : 'Active',
+                                c.check_out ? `${t('dashboard.table.out')} ${formatTime(c.check_out)}` : t('dashboard.table.active'),
                                 c.method.replace(/_/g, ' '),
                             ])}
                         />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Recent Payments</h2>
+                        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t('dashboard.recent_payments')}</h2>
                         <Table
-                            headers={['Member', 'Amount', 'Method', 'Date']}
+                            headers={[t('dashboard.table.member'), t('dashboard.table.amount'), t('dashboard.table.method'), t('dashboard.table.date')]}
                             rows={recentPayments.map((p) => [
                                 p.member,
                                 formatCurrency(p.amount),
@@ -166,7 +172,7 @@ export default function Dashboard({ stats, recentCheckins, recentPayments }: Das
 Dashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: i18n.t('dashboard.title'),
             href: dashboard(),
         },
     ],
